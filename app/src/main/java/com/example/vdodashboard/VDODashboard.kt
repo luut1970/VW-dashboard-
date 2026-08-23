@@ -71,7 +71,7 @@ fun VDODashboardScreen(
         ) {
             Box(modifier = Modifier.size(gaugeSize)) { VdoSpeedometerGti(currentKph = kph, totalKm = totalKm) }
             Box(modifier = Modifier.size(gaugeSize * 0.42f, gaugeSize)) {
-                VdoCenterPanelGti(temperature = temp, blinkerOn = blinker, oelOn = oel, ladungOn = ladung, fernlichtOn = fernlicht, tankEmpty = fuel < 0.1f)
+                VdoCenterPanelGti(temperature = temp, blinkerOn = blinker, oelOn = oel, ladungOn = ladung, fernlichtOn = fernlicht)
             }
             Box(modifier = Modifier.size(gaugeSize)) { VdoTachometerGti(currentRpm = rpm, fuelLevel = fuel) }
         }
@@ -272,29 +272,27 @@ fun VdoTachometerGti(currentRpm: Float, fuelLevel: Float) {
         drawCircle(color = Color(0xFF3A3A3A), radius = radius * 0.02f, center = Offset(center.x - radius * 0.05f, center.y - radius * 0.09f))
         drawCircle(color = Color(0xFF3A3A3A), radius = radius * 0.02f, center = Offset(center.x + radius * 0.05f, center.y - radius * 0.09f))
 
-        // Brandstof-staafjesbalk onderin de wijzerplaat
-        val barY = center.y + radius * 0.58f
-        val barSegments = 10
-        val barW = radius * 0.85f
-        val segW = barW / barSegments
-        val startX = center.x - barW / 2f
-        val filledSegments = (fuelLevel.coerceIn(0f, 1f) * barSegments).toInt()
-        for (i in 0 until barSegments) {
-            val segColor = when {
-                i >= filledSegments -> Color(0xFF2A2A2A)
-                i < 2 -> GtiAmber
-                else -> GtiWhite
-            }
-            drawRect(
-                color = segColor,
-                topLeft = Offset(startX + i * segW + segW * 0.08f, barY - radius * 0.03f),
-                size = Size(segW * 0.84f, radius * 0.06f)
-            )
-        }
-        // Simpel pompicoontje rechts van de balk
-        val pumpX = startX + barW + radius * 0.06f
-        drawRoundRect(color = GtiWhite, topLeft = Offset(pumpX, barY - radius * 0.035f), size = Size(radius * 0.05f, radius * 0.07f), cornerRadius = CornerRadius(radius * 0.008f))
-        drawLine(color = GtiWhite, start = Offset(pumpX + radius * 0.05f, barY - radius * 0.02f), end = Offset(pumpX + radius * 0.09f, barY - radius * 0.035f), strokeWidth = radius * 0.008f)
+        // Brandstofmeter (liggend), zelfde stijl als de temperatuurmeter
+        val fuelBoxW = radius * 0.90f
+        val fuelBoxH = radius * 0.22f
+        val fuelBoxTop = center.y + radius * 0.44f
+        val fuelBoxLeft = center.x - fuelBoxW / 2f
+        drawRoundRect(color = Color(0xFF141414), topLeft = Offset(fuelBoxLeft, fuelBoxTop), size = Size(fuelBoxW, fuelBoxH), cornerRadius = CornerRadius(radius * 0.05f))
+        val lowFuel = fuelLevel < 0.1f
+        drawCircle(color = if (lowFuel) GtiAmber else GtiAmber.copy(alpha = 0.25f), radius = radius * 0.028f, center = Offset(center.x, fuelBoxTop + fuelBoxH * 0.28f))
+        val fScaleY = fuelBoxTop + fuelBoxH * 0.68f
+        drawLine(color = GtiWhite.copy(alpha = 0.4f), start = Offset(fuelBoxLeft + fuelBoxW * 0.15f, fScaleY), end = Offset(fuelBoxLeft + fuelBoxW * 0.85f, fScaleY), strokeWidth = radius * 0.008f)
+        val fFrac = fuelLevel.coerceIn(0f, 1f)
+        val fNeedleX = fuelBoxLeft + fuelBoxW * 0.15f + fFrac * (fuelBoxW * 0.70f)
+        drawLine(
+            color = GtiNeedle,
+            start = Offset(center.x, fuelBoxTop + fuelBoxH * 1.05f),
+            end = Offset(fNeedleX, fScaleY - radius * 0.035f),
+            strokeWidth = radius * 0.015f,
+            cap = StrokeCap.Round
+        )
+        drawLabel("leeg", fuelBoxLeft + fuelBoxW * 0.15f, fuelBoxTop + fuelBoxH + radius * 0.045f, radius * 0.045f, Color.Gray, bold = false)
+        drawLabel("vol", fuelBoxLeft + fuelBoxW * 0.85f, fuelBoxTop + fuelBoxH + radius * 0.045f, radius * 0.045f, Color.Gray, bold = false)
     }
 }
 
@@ -306,8 +304,7 @@ fun VdoCenterPanelGti(
     blinkerOn: Boolean,
     oelOn: Boolean,
     ladungOn: Boolean,
-    fernlichtOn: Boolean,
-    tankEmpty: Boolean
+    fernlichtOn: Boolean
 ) {
     var now by remember { mutableStateOf(Calendar.getInstance()) }
     LaunchedEffect(Unit) {
@@ -331,47 +328,96 @@ fun VdoCenterPanelGti(
         val tempBoxTop = h * 0.03f
         val tempBoxH = h * 0.13f
         drawRoundRect(color = Color(0xFF141414), topLeft = Offset(w * 0.08f, tempBoxTop), size = Size(w * 0.84f, tempBoxH), cornerRadius = CornerRadius(unit * 0.06f))
-        // rood waarschuwingslampje
         val overheating = temperature > 110f
         drawCircle(color = if (overheating) GtiRed else GtiRed.copy(alpha = 0.25f), radius = unit * 0.035f, center = Offset(w * 0.5f, tempBoxTop + tempBoxH * 0.32f))
-        // schaallijn + naald
         val tScaleY = tempBoxTop + tempBoxH * 0.72f
         drawLine(color = GtiWhite.copy(alpha = 0.4f), start = Offset(w * 0.18f, tScaleY), end = Offset(w * 0.82f, tScaleY), strokeWidth = unit * 0.01f)
         val tFrac = ((temperature - 40f) / 100f).coerceIn(0f, 1f)
-        val needleX = w * 0.18f + tFrac * (w * 0.64f)
-        val needleTop = Offset(needleX, tScaleY - unit * 0.05f)
-        val needleBottom = Offset(w * 0.5f, tempBoxTop + tempBoxH * 1.15f)
-        drawLine(color = GtiNeedle, start = needleBottom, end = needleTop, strokeWidth = unit * 0.018f, cap = StrokeCap.Round)
+        val tNeedleX = w * 0.18f + tFrac * (w * 0.64f)
+        drawLine(color = GtiNeedle, start = Offset(w * 0.5f, tempBoxTop + tempBoxH * 1.15f), end = Offset(tNeedleX, tScaleY - unit * 0.05f), strokeWidth = unit * 0.018f, cap = StrokeCap.Round)
         drawLabel("koud", w * 0.18f, tempBoxTop + tempBoxH + unit * 0.05f, unit * 0.055f, Color.Gray, bold = false)
         drawLabel("heet", w * 0.82f, tempBoxTop + tempBoxH + unit * 0.05f, unit * 0.055f, Color.Gray, bold = false)
 
-        // --- 5 ronde lampjes op een rij ---
-        val lampY = h * 0.42f
-        val lampR = unit * 0.075f
-        val lampXs = listOf(0.18f, 0.34f, 0.50f, 0.66f, 0.82f).map { it * w }
-        val lamps = listOf(
-            Triple(blinkerOn, GtiGreen, "BLINKER"),
-            Triple(tankEmpty, GtiWhite, "TANK"),
-            Triple(oelOn, GtiAmber, "OEL"),
-            Triple(ladungOn, GtiRed, "LADUNG"),
-            Triple(fernlichtOn, GtiBlue, "FERN")
+        // --- Controlelampjes: 4 echte + 2 blinde (dummy) LED-plekken, symbolen i.p.v. tekst ---
+        val lampY = h * 0.40f
+        val lampR = unit * 0.062f
+        val slotXs = listOf(0.12f, 0.28f, 0.44f, 0.58f, 0.72f, 0.88f).map { it * w }
+        // volgorde: blind, blinker, oel, ladung, fernlicht, blind (net als op het origineel:
+        // niet elke fysieke LED-plek is op elk model aangesloten)
+        data class Slot(val on: Boolean, val color: Color, val icon: ((DrawScope, Offset, Float, Color) -> Unit)?)
+        val slots = listOf(
+            Slot(false, Color(0xFF1A1A1A), null),
+            Slot(blinkerOn, GtiGreen) { ds, c, s, col -> ds.iconBlinker(c, s, col) },
+            Slot(oelOn, GtiAmber) { ds, c, s, col -> ds.iconOil(c, s, col) },
+            Slot(ladungOn, GtiRed) { ds, c, s, col -> ds.iconBattery(c, s, col) },
+            Slot(fernlichtOn, GtiBlue) { ds, c, s, col -> ds.iconHeadlight(c, s, col) },
+            Slot(false, Color(0xFF1A1A1A), null)
         )
-        lampXs.forEachIndexed { i, x ->
-            val (on, color, label) = lamps[i]
-            drawCircle(color = Color(0xFF1A1A1A), radius = lampR * 1.25f, center = Offset(x, lampY))
-            drawCircle(
-                color = if (on) color else color.copy(alpha = 0.28f),
-                radius = lampR,
-                center = Offset(x, lampY)
-            )
-            drawLabel(label, x, lampY + lampR * 2.1f, unit * 0.04f, Color.Gray, bold = false)
+        slotXs.forEachIndexed { i, x ->
+            val slot = slots[i]
+            val lampCenter = Offset(x, lampY)
+            drawCircle(color = Color(0xFF1A1A1A), radius = lampR * 1.3f, center = lampCenter)
+            drawCircle(color = if (slot.on) slot.color else slot.color.copy(alpha = if (slot.icon == null) 1f else 0.28f), radius = lampR, center = lampCenter)
+            if (slot.icon != null) {
+                val iconY = lampY - lampR * 2.3f
+                slot.icon.invoke(this, Offset(x, iconY), unit * 0.075f, Color.LightGray)
+            }
         }
 
-        // --- Digitale klok (LCD-stijl) onderin ---
+        // --- Digitale klok (LCD-stijl) onderin, tekst geschaald op paneelbreedte zodat hij past ---
         val lcdTop = h * 0.62f
         val lcdH = h * 0.30f
         drawRoundRect(color = GtiLcdBg, topLeft = Offset(w * 0.12f, lcdTop), size = Size(w * 0.76f, lcdH), cornerRadius = CornerRadius(unit * 0.03f))
-        drawLabel("$hh:$mm", w * 0.5f, lcdTop + lcdH * 0.68f, lcdH * 0.55f, GtiLcdFg, bold = true, mono = true)
+        drawLabel("$hh:$mm", w * 0.5f, lcdTop + lcdH * 0.5f + unit * 0.05f, unit * 0.16f, GtiLcdFg, bold = true, mono = true)
         drawLabel("km/h", w * 0.5f, lcdTop - unit * 0.03f, unit * 0.045f, Color.Gray, bold = false)
+    }
+}
+
+// ---------- Kleine symboolpictogrammen voor de lampjes ----------
+
+private fun DrawScope.iconBlinker(c: Offset, s: Float, color: Color) {
+    val path = Path().apply {
+        moveTo(c.x - s * 0.5f, c.y - s * 0.22f)
+        lineTo(c.x + s * 0.05f, c.y - s * 0.22f)
+        lineTo(c.x + s * 0.05f, c.y - s * 0.42f)
+        lineTo(c.x + s * 0.55f, c.y)
+        lineTo(c.x + s * 0.05f, c.y + s * 0.42f)
+        lineTo(c.x + s * 0.05f, c.y + s * 0.22f)
+        lineTo(c.x - s * 0.5f, c.y + s * 0.22f)
+        close()
+    }
+    drawPath(path, color)
+}
+
+private fun DrawScope.iconBattery(c: Offset, s: Float, color: Color) {
+    drawRoundRect(color = color, topLeft = Offset(c.x - s * 0.4f, c.y - s * 0.28f), size = Size(s * 0.8f, s * 0.56f), cornerRadius = CornerRadius(s * 0.06f), style = Stroke(width = s * 0.08f))
+    drawRect(color = color, topLeft = Offset(c.x - s * 0.16f, c.y - s * 0.42f), size = Size(s * 0.11f, s * 0.14f))
+    drawRect(color = color, topLeft = Offset(c.x + s * 0.05f, c.y - s * 0.42f), size = Size(s * 0.11f, s * 0.14f))
+    drawLine(color = color, start = Offset(c.x - s * 0.16f, c.y), end = Offset(c.x + s * 0.16f, c.y), strokeWidth = s * 0.07f)
+    drawLine(color = color, start = Offset(c.x, c.y - s * 0.1f), end = Offset(c.x, c.y + s * 0.1f), strokeWidth = s * 0.07f)
+}
+
+private fun DrawScope.iconOil(c: Offset, s: Float, color: Color) {
+    val path = Path().apply {
+        moveTo(c.x, c.y - s * 0.5f)
+        cubicTo(c.x + s * 0.48f, c.y + s * 0.05f, c.x + s * 0.28f, c.y + s * 0.5f, c.x, c.y + s * 0.5f)
+        cubicTo(c.x - s * 0.28f, c.y + s * 0.5f, c.x - s * 0.48f, c.y + s * 0.05f, c.x, c.y - s * 0.5f)
+        close()
+    }
+    drawPath(path, color)
+}
+
+private fun DrawScope.iconHeadlight(c: Offset, s: Float, color: Color) {
+    drawArc(
+        color = color,
+        startAngle = 90f,
+        sweepAngle = 180f,
+        useCenter = true,
+        topLeft = Offset(c.x - s * 0.4f, c.y - s * 0.35f),
+        size = Size(s * 0.7f, s * 0.7f)
+    )
+    for (i in -1..1) {
+        val yOff = i * s * 0.22f
+        drawLine(color = color, start = Offset(c.x + s * 0.32f, c.y + yOff), end = Offset(c.x + s * 0.6f, c.y + yOff * 1.4f), strokeWidth = s * 0.06f, cap = StrokeCap.Round)
     }
 }
