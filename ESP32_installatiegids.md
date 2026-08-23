@@ -1,4 +1,4 @@
-# ESP32 VDO Dashboard — installatiegids
+# ESP32 VDO Dashboard — installatiegids 
 
 Deze gids legt uit hoe je de ESP32 aansluit, bedraadt, programmeert en koppelt aan de VDO Dashboard-app.
 
