@@ -5,9 +5,7 @@ import android.graphics.Typeface
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,32 +17,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import java.util.Calendar
 import kotlin.math.cos
 import kotlin.math.sin
 
-// Officiële VDO Retro Kleuren
-val VdoBlack = Color(0xFF060606)
-val VdoFaceLight = Color(0xFF1a1a1a)
-val VdoGreyCap = Color(0xFF262626)
-val VdoChromeRing = Color(0xFFDADADA)
-val VdoOrangeNeedle = Color(0xFFFF9100)
-val VdoRedline = Color(0xFFD50000)
-val VdoDimGray = Color(0xFF696969)
-val VdoGreen = Color(0xFF39C64A)
-val VdoBlue = Color(0xFF438CFF)
-val VdoIvory = Color(0xFFECE7D8)
+// ---------- Kleuren (VW Golf Mk2 GTI / VDO-stijl: vlak, geen chrome) ----------
+val GtiFace = Color(0xFF050505)
+val GtiRing = Color(0xFFB0B0B0)
+val GtiNeedle = Color(0xFFE7C79A)
+val GtiAmber = Color(0xFFFF9F1C)
+val GtiRed = Color(0xFFD62B1F)
+val GtiGreen = Color(0xFF3FC65A)
+val GtiBlue = Color(0xFF3D7FD6)
+val GtiWhite = Color(0xFFECECEC)
+val GtiLcdBg = Color(0xFF3A4A3A)
+val GtiLcdFg = Color(0xFF1C2A1C)
 
 @Composable
 fun VDODashboardScreen(
@@ -65,106 +60,33 @@ fun VDODashboardScreen(
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        val availableWidth = maxWidth / 3.3f
+        val availableWidth = maxWidth / 2.7f
         val availableHeight = maxHeight * 0.95f
         val gaugeSize = if (availableWidth < availableHeight) availableWidth else availableHeight
 
         Row(
             modifier = Modifier.fillMaxSize(),
             horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(modifier = Modifier.size(gaugeSize)) { VdoSpeedometer(currentKph = kph, totalKm = totalKm) }
-            Box(modifier = Modifier.size(gaugeSize * 0.65f)) { VdoClock() }
-            Box(modifier = Modifier.size(gaugeSize)) {
-                VdoTachometerCombo(
-                    currentRpm = rpm,
-                    fuelLevel = fuel,
-                    temperature = temp,
-                    blinkerOn = blinker,
-                    oelOn = oel,
-                    ladungOn = ladung,
-                    fernlichtOn = fernlicht
-                )
+            Box(modifier = Modifier.size(gaugeSize)) { VdoSpeedometerGti(currentKph = kph, totalKm = totalKm) }
+            Box(modifier = Modifier.size(gaugeSize * 0.42f, gaugeSize)) {
+                VdoCenterPanelGti(temperature = temp, blinkerOn = blinker, oelOn = oel, ladungOn = ladung, fernlichtOn = fernlicht, tankEmpty = fuel < 0.1f)
             }
+            Box(modifier = Modifier.size(gaugeSize)) { VdoTachometerGti(currentRpm = rpm, fuelLevel = fuel) }
         }
     }
 }
 
 // ---------- Gedeelde tekenhulpjes ----------
 
-private fun lerpColor(a: Color, b: Color, t: Float): Color {
-    val ct = t.coerceIn(0f, 1f)
-    return Color(
-        red = a.red + (b.red - a.red) * ct,
-        green = a.green + (b.green - a.green) * ct,
-        blue = a.blue + (b.blue - a.blue) * ct,
-        alpha = 1f
-    )
-}
-
-private fun chromeBrush(c: Offset, r: Float): Brush {
+private fun DrawScope.gtiFace(c: Offset, r: Float) {
     val safeR = r.coerceAtLeast(1f)
-    // Scherpe banden i.p.v. één zachte vloeiende overgang: echt chroom weerkaatst de
-    // omgeving in afwisselend felle en donkere stroken, niet in één egale verloop.
-    return Brush.linearGradient(
-        colorStops = arrayOf(
-            0.00f to Color(0xFFFFFFFF),
-            0.07f to Color(0xFFFFFFFF),
-            0.14f to Color(0xFF262626),
-            0.27f to Color(0xFF1A1A1A),
-            0.34f to Color(0xFFF2F2F2),
-            0.46f to Color(0xFFEDEDED),
-            0.53f to Color(0xFF141414),
-            0.66f to Color(0xFF0D0D0D),
-            0.74f to Color(0xFFFAFAFA),
-            0.85f to Color(0xFFC9C9C9),
-            0.92f to Color(0xFF3A3A3A),
-            1.00f to Color(0xFF8A8A8A)
-        ),
-        start = Offset(c.x - safeR, c.y - safeR),
-        end = Offset(c.x + safeR, c.y + safeR)
-    )
+    drawCircle(color = GtiFace, radius = safeR, center = c)
+    drawCircle(color = GtiRing, radius = safeR, center = c, style = Stroke(width = safeR * 0.014f))
 }
 
-// Chrome ring + zwarte wijzerplaat, gedeeld door alle grote meters
-private fun DrawScope.bezel(c: Offset, r: Float) {
-    val safeR = r.coerceAtLeast(1f)
-    drawCircle(color = Color.Black.copy(alpha = 0.5f), radius = safeR * 1.05f, center = Offset(c.x, c.y + safeR * 0.02f))
-    drawCircle(brush = chromeBrush(c, safeR), radius = safeR, center = c)
-
-    // Losse felle highlight-boog linksboven: het typische scherpe lichtlijntje op gepolijst chroom
-    drawArc(
-        color = Color.White.copy(alpha = 0.9f),
-        startAngle = 200f,
-        sweepAngle = 55f,
-        useCenter = false,
-        topLeft = Offset(c.x - safeR * 0.97f, c.y - safeR * 0.97f),
-        size = Size(safeR * 1.94f, safeR * 1.94f),
-        style = Stroke(width = safeR * 0.035f)
-    )
-    // Zachte schaduwboog rechtsonder, tegenovergesteld van de highlight
-    drawArc(
-        color = Color.Black.copy(alpha = 0.55f),
-        startAngle = 20f,
-        sweepAngle = 55f,
-        useCenter = false,
-        topLeft = Offset(c.x - safeR * 0.97f, c.y - safeR * 0.97f),
-        size = Size(safeR * 1.94f, safeR * 1.94f),
-        style = Stroke(width = safeR * 0.035f)
-    )
-    // Dunne felle rand op de allerbuitenste kilometerrand voor extra scherpte
-    drawCircle(color = Color.White.copy(alpha = 0.6f), radius = safeR * 0.995f, center = c, style = Stroke(width = safeR * 0.008f))
-
-    drawCircle(
-        brush = Brush.radialGradient(colors = listOf(VdoFaceLight, VdoBlack), center = Offset(c.x - safeR * 0.12f, c.y - safeR * 0.12f), radius = safeR * 1.05f),
-        radius = safeR * 0.90f,
-        center = c
-    )
-    drawCircle(color = Color.White.copy(alpha = 0.22f), radius = safeR * 0.905f, center = c, style = Stroke(width = safeR * 0.005f))
-}
-
-private fun DrawScope.drawLabel(text: String, x: Float, y: Float, sizePx: Float, color: Color, bold: Boolean = true) {
+private fun DrawScope.drawLabel(text: String, x: Float, y: Float, sizePx: Float, color: Color, bold: Boolean = true, mono: Boolean = false) {
     drawContext.canvas.nativeCanvas.drawText(
         text, x, y,
         Paint().apply {
@@ -172,12 +94,11 @@ private fun DrawScope.drawLabel(text: String, x: Float, y: Float, sizePx: Float,
             this.color = color.toArgb()
             textSize = sizePx
             textAlign = Paint.Align.CENTER
-            typeface = Typeface.create("sans-serif-condensed", if (bold) Typeface.BOLD else Typeface.NORMAL)
+            typeface = if (mono) Typeface.MONOSPACE else Typeface.create("sans-serif-condensed", if (bold) Typeface.BOLD else Typeface.NORMAL)
         }
     )
 }
 
-// Tapse naald i.p.v. een simpele lijn
 private fun DrawScope.taperedNeedle(c: Offset, angleDeg: Float, length: Float, baseWidth: Float, color: Color) {
     val rad = Math.toRadians(angleDeg.toDouble())
     val dx = cos(rad).toFloat()
@@ -201,104 +122,193 @@ private fun DrawScope.taperedNeedle(c: Offset, angleDeg: Float, length: Float, b
 // ---------- Snelheidsmeter ----------
 
 @Composable
-fun VdoSpeedometer(currentKph: Float, totalKm: Float = 0f) {
+fun VdoSpeedometerGti(currentKph: Float, totalKm: Float = 0f) {
     val animatedKph by animateFloatAsState(targetValue = currentKph)
     Canvas(modifier = Modifier.fillMaxSize()) {
         val center = Offset(size.width / 2, size.height / 2)
         val radius = (size.width / 2) * 0.90f
 
-        bezel(center, radius)
+        gtiFace(center, radius)
 
         val startAngle = 135f
         val sweepAngle = 270f
-        val maxKph = 200f
-        // Het zichtbare gedeelte (20 t/m 200) loopt symmetrisch over de volle 270°, zoals
-        // het origineel - dat zorgt ervoor dat 20 en 200 op dezelfde hoogte staan.
-        // Het blanco, onbenoemde stukje voor 0-20 km/h komt er apart vóór te hangen.
-        val zeroGap = 14f // hoek voor het blanco stukje 0-20 km/h, vóór het zichtbare gedeelte
+        val maxKph = 260f
+        // Zichtbare schaal 20-260 symmetrisch over de volle 270°, met een blanco
+        // stukje voor 0-20 ervoor - zelfde principe als het origineel.
+        val zeroGap = 12f
         fun angleForKph(v: Float): Float =
             if (v <= 20f) (startAngle - zeroGap) + (v / 20f) * zeroGap
-            else startAngle + ((v - 20f) / 180f) * sweepAngle
+            else startAngle + ((v - 20f) / 240f) * sweepAngle
 
-        // Drieledige schaalverdeling zoals het origineel: groot (elke 20, met cijfer),
-        // middel (elke 10) en klein (elke 2)
         var kphVal = 20
-        while (kphVal <= 200) {
-            val tickAngle = angleForKph(kphVal.toFloat())
-            val rad = Math.toRadians(tickAngle.toDouble())
+        while (kphVal <= 260) {
+            val angle = angleForKph(kphVal.toFloat())
+            val rad = Math.toRadians(angle.toDouble())
             val isMajor = kphVal % 20 == 0
             val isMid = kphVal % 10 == 0
-            val innerFrac = if (isMajor) 0.81f else if (isMid) 0.83f else 0.85f
-            val strokeW = if (isMajor) radius * 0.018f else if (isMid) radius * 0.011f else radius * 0.006f
-            val tickColor = if (isMajor) Color.White else Color.LightGray
-
+            val innerFrac = if (isMajor) 0.80f else if (isMid) 0.83f else 0.86f
+            val strokeW = if (isMajor) radius * 0.016f else if (isMid) radius * 0.010f else radius * 0.005f
             val startTick = Offset((center.x + radius * innerFrac * cos(rad)).toFloat(), (center.y + radius * innerFrac * sin(rad)).toFloat())
-            val endTick = Offset((center.x + radius * 0.88f * cos(rad)).toFloat(), (center.y + radius * 0.88f * sin(rad)).toFloat())
-            drawLine(color = tickColor, start = startTick, end = endTick, strokeWidth = strokeW, cap = StrokeCap.Round)
-
-            // Geen "0" printen, net als het origineel - de schaal begint zichtbaar bij 20
+            val endTick = Offset((center.x + radius * 0.90f * cos(rad)).toFloat(), (center.y + radius * 0.90f * sin(rad)).toFloat())
+            drawLine(color = GtiWhite, start = startTick, end = endTick, strokeWidth = strokeW, cap = StrokeCap.Round)
             if (isMajor) {
-                val labelR = radius * 0.685f
-                drawLabel(kphVal.toString(), (center.x + labelR * cos(rad)).toFloat(), (center.y + labelR * sin(rad)).toFloat() + radius * 0.03f, radius * 0.11f, VdoIvory)
+                val labelR = radius * 0.68f
+                drawLabel(kphVal.toString(), (center.x + labelR * cos(rad)).toFloat(), (center.y + labelR * sin(rad)).toFloat() + radius * 0.03f, radius * 0.105f, GtiWhite)
             }
-            kphVal += 2
+            kphVal += 5
         }
 
-        // Rode markering bij 100 km/h
-        val redRad = Math.toRadians(angleForKph(100f).toDouble())
-        drawLine(
-            color = VdoRedline,
-            start = Offset((center.x + radius * 0.81f * cos(redRad)).toFloat(), (center.y + radius * 0.81f * sin(redRad)).toFloat()),
-            end = Offset((center.x + radius * 0.88f * cos(redRad)).toFloat(), (center.y + radius * 0.88f * sin(redRad)).toFloat()),
-            strokeWidth = radius * 0.02f
+        // Rode zone net na 20 km/h
+        val redStartRad = Math.toRadians(angleForKph(20f).toDouble())
+        val redEndRad = Math.toRadians(angleForKph(40f).toDouble())
+        drawArc(
+            color = GtiRed,
+            startAngle = angleForKph(20f),
+            sweepAngle = (angleForKph(40f) - angleForKph(20f)),
+            useCenter = false,
+            topLeft = Offset(center.x - radius * 0.90f, center.y - radius * 0.90f),
+            size = Size(radius * 1.80f, radius * 1.80f),
+            style = Stroke(width = radius * 0.02f)
         )
 
-        drawLabel("km/h", center.x, center.y - radius * 0.42f, radius * 0.12f, Color.LightGray)
-        drawLabel("VDO", center.x, center.y + radius * 0.55f, radius * 0.10f, Color.LightGray, bold = true)
+        drawLabel("VDO", center.x, center.y - radius * 0.38f, radius * 0.07f, Color.LightGray, bold = false)
+        drawLabel("km", center.x, center.y - radius * 0.28f, radius * 0.065f, Color.LightGray, bold = false)
+        drawLabel("km/h", center.x, center.y + radius * 0.62f, radius * 0.11f, GtiWhite)
 
-        // Mechanische kilometerteller: losse vakjes per cijfer, boven de naaldas (zoals het origineel).
-        // Getekend VOOR de naald, zodat de naald er letterlijk overheen loopt (zoals in het echt).
-        // 5 cijfers hele kilometers + 1 (lichter) cijfer tienden km, net als een echte odometer.
+        // Mechanische kilometerteller boven de naaldas, plus decoratief trip-vakje eronder
         val totalTenths = (totalKm * 10f).toLong().coerceIn(0L, 999999L)
         val digits = totalTenths.toString().padStart(6, '0')
-        val cellW = radius * 0.105f
-        val cellH = radius * 0.15f
-        val gap = radius * 0.008f
+        val cellW = radius * 0.10f
+        val cellH = radius * 0.145f
+        val gap = radius * 0.006f
         val totalW = digits.length * cellW + (digits.length - 1) * gap
-        val boxCenterY = center.y - radius * 0.24f
+        val boxCenterY = center.y - radius * 0.20f
         val boxTop = boxCenterY - cellH / 2f
         var cellX = center.x - totalW / 2f
-
         drawRoundRect(
             color = Color(0xFF0D0D0D),
-            topLeft = Offset(cellX - radius * 0.02f, boxTop - radius * 0.02f),
-            size = Size(totalW + radius * 0.04f, cellH + radius * 0.04f),
-            cornerRadius = CornerRadius(radius * 0.015f),
-            style = Stroke(width = radius * 0.006f)
+            topLeft = Offset(cellX - radius * 0.015f, boxTop - radius * 0.015f),
+            size = Size(totalW + radius * 0.03f, cellH + radius * 0.03f),
+            cornerRadius = CornerRadius(radius * 0.01f),
+            style = Stroke(width = radius * 0.005f)
         )
-        digits.forEachIndexed { index, digit ->
-            val isLast = index == digits.lastIndex
-            drawRoundRect(
-                color = if (isLast) Color(0xFF3A3A3A) else Color(0xFF1A1A1A),
-                topLeft = Offset(cellX, boxTop),
-                size = Size(cellW, cellH),
-                cornerRadius = CornerRadius(radius * 0.01f)
-            )
-            drawLabel(digit.toString(), cellX + cellW / 2f, boxCenterY + cellH * 0.28f, cellH * 0.62f, Color.White)
+        digits.forEach { digit ->
+            drawRoundRect(color = Color(0xFF1A1A1A), topLeft = Offset(cellX, boxTop), size = Size(cellW, cellH), cornerRadius = CornerRadius(radius * 0.008f))
+            drawLabel(digit.toString(), cellX + cellW / 2f, boxCenterY + cellH * 0.28f, cellH * 0.6f, Color.White)
             cellX += cellW + gap
         }
 
+        // Decoratief tripteller-vakje onder de naaldas
+        val tripY = center.y + radius * 0.28f
+        drawRoundRect(
+            color = Color(0xFF0D0D0D),
+            topLeft = Offset(center.x - radius * 0.18f, tripY - radius * 0.09f),
+            size = Size(radius * 0.36f, radius * 0.18f),
+            cornerRadius = CornerRadius(radius * 0.01f),
+            style = Stroke(width = radius * 0.005f)
+        )
+        drawLabel("0.0", center.x, tripY + radius * 0.03f, radius * 0.10f, GtiAmber)
+
         val targetAngle = angleForKph(animatedKph.coerceIn(0f, maxKph))
-        taperedNeedle(center, targetAngle, radius * 0.80f, radius * 0.028f, VdoIvory)
-        drawCircle(brush = chromeBrush(center, radius * 0.16f), radius = radius * 0.16f, center = center)
-        drawCircle(color = VdoGreyCap, radius = radius * 0.12f, center = center)
+        taperedNeedle(center, targetAngle, radius * 0.82f, radius * 0.026f, GtiNeedle)
+        drawCircle(color = Color(0xFF1C1C1C), radius = radius * 0.09f, center = center)
+        drawCircle(color = Color(0xFF3A3A3A), radius = radius * 0.02f, center = Offset(center.x - radius * 0.05f, center.y - radius * 0.09f))
+        drawCircle(color = Color(0xFF3A3A3A), radius = radius * 0.02f, center = Offset(center.x + radius * 0.05f, center.y - radius * 0.09f))
     }
 }
 
-// ---------- Klok ----------
+// ---------- Toerenteller (met brandstofbalk) ----------
 
 @Composable
-fun VdoClock() {
+fun VdoTachometerGti(currentRpm: Float, fuelLevel: Float) {
+    val animatedRpm by animateFloatAsState(targetValue = currentRpm)
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val center = Offset(size.width / 2, size.height / 2)
+        val radius = (size.width / 2) * 0.90f
+
+        gtiFace(center, radius)
+
+        val startAngle = 135f
+        val sweepAngle = 270f
+        val maxRpm = 8f
+        for (i in 0..8) {
+            val rad = Math.toRadians((startAngle + (i / maxRpm) * sweepAngle).toDouble())
+            val startTick = Offset((center.x + radius * 0.80f * cos(rad)).toFloat(), (center.y + radius * 0.80f * sin(rad)).toFloat())
+            val endTick = Offset((center.x + radius * 0.90f * cos(rad)).toFloat(), (center.y + radius * 0.90f * sin(rad)).toFloat())
+            drawLine(color = if (i >= 6) GtiAmber else GtiWhite, start = startTick, end = endTick, strokeWidth = radius * 0.016f, cap = StrokeCap.Round)
+            val labelR = radius * 0.68f
+            drawLabel(i.toString(), (center.x + labelR * cos(rad)).toFloat(), (center.y + labelR * sin(rad)).toFloat() + radius * 0.03f, radius * 0.105f, GtiWhite)
+            if (i < 8) {
+                val mRad = Math.toRadians((startAngle + ((i + 0.5f) / maxRpm) * sweepAngle).toDouble())
+                drawLine(
+                    color = if (i >= 6) GtiAmber.copy(alpha = 0.7f) else Color.LightGray,
+                    start = Offset((center.x + radius * 0.85f * cos(mRad)).toFloat(), (center.y + radius * 0.85f * sin(mRad)).toFloat()),
+                    end = Offset((center.x + radius * 0.90f * cos(mRad)).toFloat(), (center.y + radius * 0.90f * sin(mRad)).toFloat()),
+                    strokeWidth = radius * 0.006f
+                )
+            }
+        }
+        // Gearceerde zone 7-8 (extra waarschuwing, zoals het origineel)
+        val hatchStart = startAngle + (7f / maxRpm) * sweepAngle
+        val hatchSweep = (1f / maxRpm) * sweepAngle
+        var hAngle = hatchStart
+        while (hAngle < hatchStart + hatchSweep) {
+            val rad = Math.toRadians(hAngle.toDouble())
+            drawLine(
+                color = GtiAmber.copy(alpha = 0.55f),
+                start = Offset((center.x + radius * 0.80f * cos(rad)).toFloat(), (center.y + radius * 0.80f * sin(rad)).toFloat()),
+                end = Offset((center.x + radius * 0.90f * cos(rad)).toFloat(), (center.y + radius * 0.90f * sin(rad)).toFloat()),
+                strokeWidth = radius * 0.006f
+            )
+            hAngle += 3f
+        }
+
+        drawLabel("VDO", center.x, center.y - radius * 0.34f, radius * 0.075f, Color.LightGray, bold = false)
+        drawLabel("1/min x1000", center.x, center.y - radius * 0.22f, radius * 0.08f, GtiWhite)
+
+        val targetAngle = startAngle + (animatedRpm.coerceIn(0f, maxRpm) / maxRpm) * sweepAngle
+        taperedNeedle(center, targetAngle, radius * 0.72f, radius * 0.026f, GtiNeedle)
+        drawCircle(color = Color(0xFF1C1C1C), radius = radius * 0.09f, center = center)
+        drawCircle(color = Color(0xFF3A3A3A), radius = radius * 0.02f, center = Offset(center.x - radius * 0.05f, center.y - radius * 0.09f))
+        drawCircle(color = Color(0xFF3A3A3A), radius = radius * 0.02f, center = Offset(center.x + radius * 0.05f, center.y - radius * 0.09f))
+
+        // Brandstof-staafjesbalk onderin de wijzerplaat
+        val barY = center.y + radius * 0.58f
+        val barSegments = 10
+        val barW = radius * 0.85f
+        val segW = barW / barSegments
+        val startX = center.x - barW / 2f
+        val filledSegments = (fuelLevel.coerceIn(0f, 1f) * barSegments).toInt()
+        for (i in 0 until barSegments) {
+            val segColor = when {
+                i >= filledSegments -> Color(0xFF2A2A2A)
+                i < 2 -> GtiAmber
+                else -> GtiWhite
+            }
+            drawRect(
+                color = segColor,
+                topLeft = Offset(startX + i * segW + segW * 0.08f, barY - radius * 0.03f),
+                size = Size(segW * 0.84f, radius * 0.06f)
+            )
+        }
+        // Simpel pompicoontje rechts van de balk
+        val pumpX = startX + barW + radius * 0.06f
+        drawRoundRect(color = GtiWhite, topLeft = Offset(pumpX, barY - radius * 0.035f), size = Size(radius * 0.05f, radius * 0.07f), cornerRadius = CornerRadius(radius * 0.008f))
+        drawLine(color = GtiWhite, start = Offset(pumpX + radius * 0.05f, barY - radius * 0.02f), end = Offset(pumpX + radius * 0.09f, barY - radius * 0.035f), strokeWidth = radius * 0.008f)
+    }
+}
+
+// ---------- Middenpaneel: temperatuur, lampjes, digitale klok ----------
+
+@Composable
+fun VdoCenterPanelGti(
+    temperature: Float,
+    blinkerOn: Boolean,
+    oelOn: Boolean,
+    ladungOn: Boolean,
+    fernlichtOn: Boolean,
+    tankEmpty: Boolean
+) {
     var now by remember { mutableStateOf(Calendar.getInstance()) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -306,236 +316,62 @@ fun VdoClock() {
             kotlinx.coroutines.delay(1000L)
         }
     }
-    val hour = now.get(Calendar.HOUR)
-    val minute = now.get(Calendar.MINUTE)
-    val second = now.get(Calendar.SECOND)
-    val hourAngle = -90f + hour * 30f + minute * 0.5f
-    val minuteAngle = -90f + minute * 6f + second * 0.1f
+    val hh = now.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0')
+    val mm = now.get(Calendar.MINUTE).toString().padStart(2, '0')
 
     Canvas(modifier = Modifier.fillMaxSize()) {
-        val center = Offset(size.width / 2, size.height / 2)
-        val radius = (size.width / 2) * 0.90f
+        val w = size.width
+        val h = size.height
+        val unit = w // schaal-eenheid, panel is smal en hoog
 
-        bezel(center, radius)
+        drawRoundRect(color = Color(0xFF0C0C0C), topLeft = Offset(0f, 0f), size = Size(w, h), cornerRadius = CornerRadius(unit * 0.1f))
+        drawRoundRect(color = GtiRing.copy(alpha = 0.5f), topLeft = Offset(0f, 0f), size = Size(w, h), cornerRadius = CornerRadius(unit * 0.1f), style = Stroke(width = unit * 0.015f))
 
-        // 60 strepen: elk uur (om de 5) dik, ertussen 4 dunne minuutstreepjes
-        for (i in 0..59) {
-            val angleDeg = i * 6f - 90f
-            val rad = Math.toRadians(angleDeg.toDouble())
-            val isHour = i % 5 == 0
-            val inner = if (isHour) radius * 0.71f else radius * 0.78f
-            val startTick = Offset((center.x + inner * cos(rad)).toFloat(), (center.y + inner * sin(rad)).toFloat())
-            val endTick = Offset((center.x + radius * 0.84f * cos(rad)).toFloat(), (center.y + radius * 0.84f * sin(rad)).toFloat())
-            drawLine(color = Color.White, start = startTick, end = endTick, strokeWidth = if (isHour) radius * 0.03f else radius * 0.010f)
-        }
+        // --- Temperatuurmeter (liggend), bovenin ---
+        val tempBoxTop = h * 0.03f
+        val tempBoxH = h * 0.13f
+        drawRoundRect(color = Color(0xFF141414), topLeft = Offset(w * 0.08f, tempBoxTop), size = Size(w * 0.84f, tempBoxH), cornerRadius = CornerRadius(unit * 0.06f))
+        // rood waarschuwingslampje
+        val overheating = temperature > 110f
+        drawCircle(color = if (overheating) GtiRed else GtiRed.copy(alpha = 0.25f), radius = unit * 0.035f, center = Offset(w * 0.5f, tempBoxTop + tempBoxH * 0.32f))
+        // schaallijn + naald
+        val tScaleY = tempBoxTop + tempBoxH * 0.72f
+        drawLine(color = GtiWhite.copy(alpha = 0.4f), start = Offset(w * 0.18f, tScaleY), end = Offset(w * 0.82f, tScaleY), strokeWidth = unit * 0.01f)
+        val tFrac = ((temperature - 40f) / 100f).coerceIn(0f, 1f)
+        val needleX = w * 0.18f + tFrac * (w * 0.64f)
+        val needleTop = Offset(needleX, tScaleY - unit * 0.05f)
+        val needleBottom = Offset(w * 0.5f, tempBoxTop + tempBoxH * 1.15f)
+        drawLine(color = GtiNeedle, start = needleBottom, end = needleTop, strokeWidth = unit * 0.018f, cap = StrokeCap.Round)
+        drawLabel("koud", w * 0.18f, tempBoxTop + tempBoxH + unit * 0.05f, unit * 0.055f, Color.Gray, bold = false)
+        drawLabel("heet", w * 0.82f, tempBoxTop + tempBoxH + unit * 0.05f, unit * 0.055f, Color.Gray, bold = false)
 
-        // Alleen 12, 3, 6 en 9 als cijfer
-        for (h in intArrayOf(12, 3, 6, 9)) {
-            val angleDeg = (h % 12) * 30f - 90f
-            val rad = Math.toRadians(angleDeg.toDouble())
-            val labelR = radius * 0.55f
-            drawLabel(h.toString(), (center.x + labelR * cos(rad)).toFloat(), (center.y + labelR * sin(rad)).toFloat() + radius * 0.05f, radius * 0.15f, VdoIvory)
-        }
-
-        // VDO tussen de 6 en het streepje eronder; Kienzle tussen de 12 en het streepje erboven
-        drawLabel("VDO", center.x, center.y + radius * 0.665f, radius * 0.085f, Color.LightGray, bold = true)
-        drawLabel("Kienzle", center.x, center.y - radius * 0.615f, radius * 0.075f, Color.LightGray, bold = false)
-
-        taperedNeedle(center, hourAngle, radius * 0.48f, radius * 0.05f, VdoIvory)
-        taperedNeedle(center, minuteAngle, radius * 0.62f, radius * 0.04f, VdoIvory)
-        drawCircle(color = VdoBlack, radius = radius * 0.09f, center = center)
-    }
-}
-
-// ---------- Toerenteller combo ----------
-
-@Composable
-fun VdoTachometerCombo(
-    currentRpm: Float,
-    fuelLevel: Float,
-    temperature: Float,
-    blinkerOn: Boolean = false,
-    oelOn: Boolean = false,
-    ladungOn: Boolean = false,
-    fernlichtOn: Boolean = false
-) {
-    val animatedRpm by animateFloatAsState(targetValue = currentRpm)
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        val center = Offset(size.width / 2, size.height / 2)
-        val radius = (size.width / 2) * 0.90f
-
-        bezel(center, radius)
-
-        // 5 vierkante controlelampjes: 4 onderin, gelijk verdeeld tussen tank- en tempmeter, 1 bovenin
-        squareLamp(center, radius, 270f, fernlichtOn, VdoBlue, "FERNLICHT")            // boven, midden
-        squareLamp(center, radius, 130f, fuelLevel < 0.1f, Color.White, "TANK")        // onder, links: tank leeg
-        squareLamp(center, radius, 110f, blinkerOn, VdoGreen, "BLINKER")               // onder
-        squareLamp(center, radius, 70f, oelOn, VdoOrangeNeedle, "OEL")                 // onder
-        squareLamp(center, radius, 50f, ladungOn, VdoRedline, "LADUNG")                // onder, rechts
-
-        // TEMP-boog rechts: van onder (blauw) via wit naar boven (rood)
-        arcGauge(center, radius, 30f, -90f, ((temperature - 50f) / 80f).coerceIn(0f, 1f), "TEMP", Color(0xFF3D7FD6), VdoRedline, Color.White)
-
-        // TANK-boog links: van onder (leeg/R) naar boven (vol/V), neutrale baan met rode zone bij R
-        arcGauge(center, radius, 150f, 90f, fuelLevel.coerceIn(0f, 1f), "TANK", Color(0xFF2A2A2A), Color(0xFF2A2A2A))
-        drawArc(
-            color = VdoRedline,
-            startAngle = 150f,
-            sweepAngle = 14f,
-            useCenter = false,
-            topLeft = Offset(center.x - radius * 0.73f, center.y - radius * 0.73f),
-            size = Size(radius * 1.46f, radius * 1.46f),
-            style = Stroke(width = radius * 0.045f)
+        // --- 5 ronde lampjes op een rij ---
+        val lampY = h * 0.42f
+        val lampR = unit * 0.075f
+        val lampXs = listOf(0.18f, 0.34f, 0.50f, 0.66f, 0.82f).map { it * w }
+        val lamps = listOf(
+            Triple(blinkerOn, GtiGreen, "BLINKER"),
+            Triple(tankEmpty, GtiWhite, "TANK"),
+            Triple(oelOn, GtiAmber, "OEL"),
+            Triple(ladungOn, GtiRed, "LADUNG"),
+            Triple(fernlichtOn, GtiBlue, "FERN")
         )
-        // 5 schaalstreepjes op de tankmeter: R (dik, rood) - dun - half (dik) - dun - V (dik)
-        val tankAngles = listOf(150f, 172.5f, 195f, 217.5f, 240f)
-        val tankLabels = listOf("R", null, "½", null, "V")
-        tankAngles.forEachIndexed { idx, angle ->
-            val rad = Math.toRadians(angle.toDouble())
-            val thick = idx % 2 == 0
-            val halfW = if (thick) radius * 0.075f else radius * 0.045f
-            val arcR = radius * 0.73f
-            drawLine(
-                color = if (idx == 0) VdoRedline else Color.White,
-                start = Offset((center.x + (arcR - halfW) * cos(rad)).toFloat(), (center.y + (arcR - halfW) * sin(rad)).toFloat()),
-                end = Offset((center.x + (arcR + halfW) * cos(rad)).toFloat(), (center.y + (arcR + halfW) * sin(rad)).toFloat()),
-                strokeWidth = if (thick) radius * 0.012f else radius * 0.006f
+        lampXs.forEachIndexed { i, x ->
+            val (on, color, label) = lamps[i]
+            drawCircle(color = Color(0xFF1A1A1A), radius = lampR * 1.25f, center = Offset(x, lampY))
+            drawCircle(
+                color = if (on) color else color.copy(alpha = 0.28f),
+                radius = lampR,
+                center = Offset(x, lampY)
             )
-            tankLabels[idx]?.let { lbl ->
-                val lblR = arcR - radius * 0.105f
-                drawLabel(lbl, (center.x + lblR * cos(rad)).toFloat(), (center.y + lblR * sin(rad)).toFloat(), radius * 0.06f, if (lbl == "R") VdoRedline else VdoIvory)
-            }
+            drawLabel(label, x, lampY + lampR * 2.1f, unit * 0.04f, Color.Gray, bold = false)
         }
 
-        drawLabel("VDO", center.x, center.y + radius * 0.80f, radius * 0.07f, Color.Gray, bold = false)
-
-        // Middelste zwarte plaatje met de chrome knop: hierin zit de (extra) toerenteller
-        val knobR = radius * 0.56f
-        val tStart = 200f
-        val tSweep = 140f
-        val maxRpm = 8f
-        for (i in 0..8) {
-            val tickAngle = tStart + (i / maxRpm) * tSweep
-            val rad = Math.toRadians(tickAngle.toDouble())
-            val startTick = Offset((center.x + knobR * 0.62f * cos(rad)).toFloat(), (center.y + knobR * 0.62f * sin(rad)).toFloat())
-            val endTick = Offset((center.x + knobR * 0.80f * cos(rad)).toFloat(), (center.y + knobR * 0.80f * sin(rad)).toFloat())
-            drawLine(color = if (i >= 6) VdoRedline else Color.White, start = startTick, end = endTick, strokeWidth = radius * 0.011f, cap = StrokeCap.Round)
-            if (i % 2 == 0) {
-                val labelR = knobR * 0.46f
-                drawLabel(i.toString(), (center.x + labelR * cos(rad)).toFloat(), (center.y + labelR * sin(rad)).toFloat() + radius * 0.020f, radius * 0.068f, VdoIvory)
-            }
-        }
-        drawLabel("RPM x1000", center.x, center.y - knobR * 0.05f, radius * 0.050f, Color.Gray, bold = false)
-
-        val targetAngle = tStart + (animatedRpm.coerceIn(0f, maxRpm) / maxRpm) * tSweep
-        taperedNeedle(center, targetAngle, knobR * 0.72f, radius * 0.016f, VdoIvory)
-
-        // Chrome knop als naaf
-        drawCircle(brush = chromeBrush(center, radius * 0.13f), radius = radius * 0.13f, center = center)
-        drawCircle(color = VdoGreyCap, radius = radius * 0.10f, center = center)
+        // --- Digitale klok (LCD-stijl) onderin ---
+        val lcdTop = h * 0.62f
+        val lcdH = h * 0.30f
+        drawRoundRect(color = GtiLcdBg, topLeft = Offset(w * 0.12f, lcdTop), size = Size(w * 0.76f, lcdH), cornerRadius = CornerRadius(unit * 0.03f))
+        drawLabel("$hh:$mm", w * 0.5f, lcdTop + lcdH * 0.68f, lcdH * 0.55f, GtiLcdFg, bold = true, mono = true)
+        drawLabel("km/h", w * 0.5f, lcdTop - unit * 0.03f, unit * 0.045f, Color.Gray, bold = false)
     }
-}
-
-// Vierkant controlelampje, tangentieel gedraaid op de rand, met een label ernaast
-private fun DrawScope.squareLamp(center: Offset, gaugeRadius: Float, angleDeg: Float, on: Boolean, color: Color, label: String) {
-    val rad = Math.toRadians(angleDeg.toDouble())
-    val midR = gaugeRadius * 0.63f
-    val pos = Offset(center.x + (midR * cos(rad)).toFloat(), center.y + (midR * sin(rad)).toFloat())
-    val lampSize = gaugeRadius * 0.17f
-
-    rotate(degrees = angleDeg + 90f, pivot = pos) {
-        drawRoundRect(
-            color = Color(0xFF0A0A0A),
-            topLeft = Offset(pos.x - lampSize / 2f - lampSize * 0.06f, pos.y - lampSize / 2f - lampSize * 0.06f),
-            size = Size(lampSize * 1.12f, lampSize * 1.12f),
-            cornerRadius = CornerRadius(lampSize * 0.12f)
-        )
-        drawRoundRect(
-            color = if (on) color else Color(0xFF1C1C1C),
-            topLeft = Offset(pos.x - lampSize / 2f, pos.y - lampSize / 2f),
-            size = Size(lampSize, lampSize),
-            cornerRadius = CornerRadius(lampSize * 0.08f)
-        )
-        if (!on) {
-            // gearceerd patroon voor de "uit"-stand, zoals het origineel
-            var offset = -lampSize / 2f
-            while (offset < lampSize / 2f) {
-                drawLine(
-                    color = color.copy(alpha = 0.55f),
-                    start = Offset(pos.x - lampSize / 2f, pos.y + offset),
-                    end = Offset(pos.x + lampSize / 2f, pos.y + offset),
-                    strokeWidth = lampSize * 0.05f
-                )
-                offset += lampSize * 0.22f
-            }
-        }
-    }
-
-    val labelR = gaugeRadius * 0.79f
-    drawCurvedLabel(label, center, labelR, angleDeg, gaugeRadius * 0.058f, Color.LightGray)
-}
-
-// Tekst die de ronding van de meter volgt (tangentieel geroteerd), rechtop leesbaar
-private fun DrawScope.drawCurvedLabel(text: String, center: Offset, r: Float, angleDeg: Float, sizePx: Float, color: Color, bold: Boolean = false) {
-    val rad = Math.toRadians(angleDeg.toDouble())
-    val pos = Offset((center.x + r * cos(rad)).toFloat(), (center.y + r * sin(rad)).toFloat())
-    val inBottomHalf = angleDeg.mod(360f) in 1f..179f
-    val rot = if (inBottomHalf) angleDeg - 90f else angleDeg + 90f
-    rotate(degrees = rot, pivot = pos) {
-        drawLabel(text, pos.x, pos.y, sizePx, color, bold)
-    }
-}
-
-// Gebogen schaalstrip (TANK / TEMP) met kleurverloop en een streepje als wijzer
-private fun DrawScope.arcGauge(center: Offset, gaugeRadius: Float, startAngle: Float, sweepTotal: Float, fraction: Float, label: String, lowColor: Color, highColor: Color, midColor: Color? = null) {
-    val arcR = gaugeRadius * 0.73f
-    val strokeW = gaugeRadius * 0.045f
-    val topLeft = Offset(center.x - arcR, center.y - arcR)
-    val arcSize = Size(arcR * 2f, arcR * 2f)
-
-    drawArc(color = Color(0xFF262626), startAngle = startAngle, sweepAngle = sweepTotal, useCenter = false, topLeft = topLeft, size = arcSize, style = Stroke(width = strokeW))
-
-    if (midColor != null) {
-        // Vloeiend verloop laag -> midden -> hoog, benaderd met kleine boogsegmentjes.
-        // Wit domineert het middenstuk, blauw/rood blijven beperkt tot de uiteinden.
-        val segments = 24
-        for (s in 0 until segments) {
-            val t0 = s / segments.toFloat()
-            val t1 = (s + 1) / segments.toFloat()
-            val tMid = (t0 + t1) / 2f
-            val segColor = when {
-                tMid < 0.32f -> lerpColor(lowColor, midColor, tMid / 0.32f)
-                tMid > 0.68f -> lerpColor(midColor, highColor, (tMid - 0.68f) / 0.32f)
-                else -> midColor
-            }
-            drawArc(
-                color = segColor,
-                startAngle = startAngle + t0 * sweepTotal,
-                sweepAngle = (t1 - t0) * sweepTotal,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = Stroke(width = strokeW)
-            )
-        }
-    } else {
-        drawArc(color = lowColor, startAngle = startAngle, sweepAngle = sweepTotal * 0.5f, useCenter = false, topLeft = topLeft, size = arcSize, style = Stroke(width = strokeW))
-        drawArc(color = highColor, startAngle = startAngle + sweepTotal * 0.5f, sweepAngle = sweepTotal * 0.5f, useCenter = false, topLeft = topLeft, size = arcSize, style = Stroke(width = strokeW))
-    }
-
-    val markerAngle = startAngle + fraction * sweepTotal
-    val mRad = Math.toRadians(markerAngle.toDouble())
-    val innerR = arcR - strokeW * 1.53f
-    val outerR = arcR + strokeW * 1.53f
-    drawLine(
-        color = VdoOrangeNeedle,
-        start = Offset((center.x + innerR * cos(mRad)).toFloat(), (center.y + innerR * sin(mRad)).toFloat()),
-        end = Offset((center.x + outerR * cos(mRad)).toFloat(), (center.y + outerR * sin(mRad)).toFloat()),
-        strokeWidth = strokeW * 0.55f,
-        cap = StrokeCap.Round
-    )
-
-    val midAngle = startAngle + sweepTotal / 2f
-    val labelR = gaugeRadius * 0.79f
-    drawCurvedLabel(label, center, labelR, midAngle, gaugeRadius * 0.058f, Color.LightGray)
 }
