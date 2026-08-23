@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" font-family="Arial, sans-serif">
+  <rect width="1200" height="820" fill="#0e0e0e"/>
+
+  <text x="600" y="40" fill="#f2f2f2" font-size="26" font-weight="bold" text-anchor="middle">ESP32 VDO Dashboard - Aansluitschema</text>
+
+  <!-- ESP32 board -->
+  <rect x="470" y="300" width="260" height="260" rx="10" fill="#1c1c1c" stroke="#888" stroke-width="2"/>
+  <text x="600" y="335" fill="#fff" font-size="20" font-weight="bold" text-anchor="middle">ESP32 DevKit</text>
+  <text x="600" y="355" fill="#999" font-size="12" text-anchor="middle">(klassieke Bluetooth vereist -</text>
+  <text x="600" y="370" fill="#999" font-size="12" text-anchor="middle">geen C3 / S2 / S3)</text>
+
+  <!-- left pin labels on ESP32 -->
+  <text x="480" y="410" fill="#ffcc66" font-size="14" text-anchor="start">GPIO34</text>
+  <text x="480" y="435" fill="#ffcc66" font-size="14" text-anchor="start">GPIO35</text>
+  <text x="480" y="470" fill="#8fd3ff" font-size="14" text-anchor="start">GPIO25</text>
+  <text x="480" y="495" fill="#8fd3ff" font-size="14" text-anchor="start">GPIO26</text>
+  <text x="480" y="520" fill="#8fd3ff" font-size="14" text-anchor="start">GPIO27</text>
+  <text x="480" y="545" fill="#8fd3ff" font-size="14" text-anchor="start">GPIO33</text>
+
+  <!-- right pin labels -->
+  <text x="720" y="410" fill="#ff8080" font-size="14" text-anchor="end">GND</text>
+  <text x="720" y="440" fill="#90ee90" font-size="14" text-anchor="end">5V / VIN</text>
+  <text x="720" y="470" fill="#90ee90" font-size="14" text-anchor="end">3V3</text>
+  <text x="720" y="500" fill="#ff9f4d" font-size="14" text-anchor="end">GPIO4</text>
+
+  <!-- ===== Tacho signal ===== -->
+  <rect x="670" y="80" width="180" height="100" rx="8" fill="#242424" stroke="#ff9f4d" stroke-width="1.5"/>
+  <text x="760" y="108" fill="#fff" font-size="13" text-anchor="middle" font-weight="bold">BMW Motronic</text>
+  <text x="760" y="126" fill="#fff" font-size="13" text-anchor="middle" font-weight="bold">"Drehzahl"-uitgang</text>
+  <text x="760" y="146" fill="#aaa" font-size="11" text-anchor="middle">zwarte draad, 0-12V puls</text>
+  <text x="760" y="162" fill="#aaa" font-size="11" text-anchor="middle">2 pulsen / omwenteling</text>
+  <text x="760" y="178" fill="#ff9f4d" font-size="10" text-anchor="middle">-&gt; PC817 LED-kathode</text>
+
+  <rect x="900" y="80" width="70" height="100" rx="8" fill="#1a1a1a" stroke="#666" stroke-width="1"/>
+  <text x="935" y="115" fill="#fff" font-size="11" text-anchor="middle">+12V</text>
+  <text x="935" y="130" fill="#fff" font-size="11" text-anchor="middle">geschakeld</text>
+  <text x="935" y="148" fill="#aaa" font-size="10" text-anchor="middle">-&gt; 1k</text>
+  <text x="935" y="162" fill="#aaa" font-size="10" text-anchor="middle">-&gt; LED-</text>
+  <text x="935" y="176" fill="#aaa" font-size="10" text-anchor="middle">anode</text>
+
+  <rect x="1000" y="80" width="180" height="100" rx="8" fill="#242424" stroke="#ff9f4d" stroke-width="2"/>
+  <text x="1090" y="106" fill="#fff" font-size="14" text-anchor="middle" font-weight="bold">PC817</text>
+  <text x="1090" y="123" fill="#fff" font-size="12" text-anchor="middle">optocoupler</text>
+  <text x="1090" y="141" fill="#aaa" font-size="10" text-anchor="middle">volledig galvanisch</text>
+  <text x="1090" y="154" fill="#aaa" font-size="10" text-anchor="middle">gescheiden van auto</text>
+  <text x="1090" y="171" fill="#aaa" font-size="10" text-anchor="middle">uitgang: 10k pull-up 3V3</text>
+
+  <path d="M 850 130 L 900 130" fill="none" stroke="#ff9f4d" stroke-width="2"/>
+  <path d="M 970 130 L 1000 130" fill="none" stroke="#ff9f4d" stroke-width="2"/>
+  <path d="M 1090 180 L 1090 500 L 730 500" fill="none" stroke="#ff9f4d" stroke-width="2"/>
+  <text x="1090" y="200" fill="#666" font-size="10" text-anchor="middle">(uitgangszijde deelt GND met ESP32,</text>
+  <text x="1090" y="213" fill="#666" font-size="10" text-anchor="middle">ingangszijde blijft gescheiden)</text>
+
+  <!-- ===== Fuel sender ===== -->
+  <rect x="60" y="80" width="200" height="90" rx="8" fill="#242424" stroke="#666" stroke-width="1.5"/>
+  <text x="160" y="112" fill="#fff" font-size="15" text-anchor="middle" font-weight="bold">Tank-peilgever</text>
+  <text x="160" y="132" fill="#aaa" font-size="12" text-anchor="middle">(weerstandssensor,</text>
+  <text x="160" y="148" fill="#aaa" font-size="12" text-anchor="middle">bestaand in de auto)</text>
+
+  <!-- voltage divider box fuel -->
+  <rect x="300" y="80" width="150" height="90" rx="8" fill="#242424" stroke="#666" stroke-width="1.5"/>
+  <text x="375" y="108" fill="#fff" font-size="13" text-anchor="middle" font-weight="bold">Spannings-</text>
+  <text x="375" y="126" fill="#fff" font-size="13" text-anchor="middle" font-weight="bold">deler</text>
+  <text x="375" y="146" fill="#aaa" font-size="11" text-anchor="middle">R naar 3V3 + GND</text>
+  <text x="375" y="160" fill="#aaa" font-size="11" text-anchor="middle">midden -&gt; GPIO34</text>
+
+  <line x1="260" y1="125" x2="300" y2="125" stroke="#ffcc66" stroke-width="2"/>
+  <path d="M 450 125 L 465 125 L 465 405 L 470 405" fill="none" stroke="#ffcc66" stroke-width="2"/>
+
+  <!-- ===== Temp sender ===== -->
+  <rect x="60" y="200" width="200" height="90" rx="8" fill="#242424" stroke="#666" stroke-width="1.5"/>
+  <text x="160" y="232" fill="#fff" font-size="15" text-anchor="middle" font-weight="bold">Temp-sensor</text>
+  <text x="160" y="252" fill="#aaa" font-size="12" text-anchor="middle">(NTC / bestaande</text>
+  <text x="160" y="268" fill="#aaa" font-size="12" text-anchor="middle">motorsensor)</text>
+
+  <rect x="300" y="200" width="150" height="90" rx="8" fill="#242424" stroke="#666" stroke-width="1.5"/>
+  <text x="375" y="228" fill="#fff" font-size="13" text-anchor="middle" font-weight="bold">Spannings-</text>
+  <text x="375" y="246" fill="#fff" font-size="13" text-anchor="middle" font-weight="bold">deler</text>
+  <text x="375" y="266" fill="#aaa" font-size="11" text-anchor="middle">R naar 3V3 + GND</text>
+  <text x="375" y="280" fill="#aaa" font-size="11" text-anchor="middle">midden -&gt; GPIO35</text>
+
+  <line x1="260" y1="245" x2="300" y2="245" stroke="#ffcc66" stroke-width="2"/>
+  <path d="M 450 245 L 465 245 L 465 430 L 470 430" fill="none" stroke="#ffcc66" stroke-width="2"/>
+
+  <!-- ===== 4 lampjes-ingangen, elk via PC817 ===== -->
+  <g id="switches">
+    <!-- Blinker -->
+    <rect x="60" y="440" width="150" height="60" rx="8" fill="#242424" stroke="#8fd3ff" stroke-width="1.5"/>
+    <text x="135" y="463" fill="#fff" font-size="12" text-anchor="middle" font-weight="bold">Blinker-relais</text>
+    <text x="135" y="480" fill="#8fd3ff" font-size="10" text-anchor="middle">schakelt naar GND</text>
+    <rect x="270" y="440" width="130" height="60" rx="8" fill="#1a1a1a" stroke="#ff9f4d" stroke-width="1.5"/>
+    <text x="335" y="460" fill="#fff" font-size="11" text-anchor="middle" font-weight="bold">PC817</text>
+    <text x="335" y="476" fill="#aaa" font-size="9" text-anchor="middle">10k -&gt; 3V3</text>
+    <text x="335" y="488" fill="#aaa" font-size="9" text-anchor="middle">-&gt; GPIO25</text>
+    <path d="M 210 470 L 270 470" fill="none" stroke="#8fd3ff" stroke-width="2"/>
+    <path d="M 400 470 L 470 465" fill="none" stroke="#ff9f4d" stroke-width="2"/>
+
+    <!-- Oel -->
+    <rect x="60" y="510" width="150" height="60" rx="8" fill="#242424" stroke="#8fd3ff" stroke-width="1.5"/>
+    <text x="135" y="533" fill="#fff" font-size="12" text-anchor="middle" font-weight="bold">Oliedrukschakelaar</text>
+    <text x="135" y="550" fill="#8fd3ff" font-size="10" text-anchor="middle">schakelt naar GND</text>
+    <rect x="270" y="510" width="130" height="60" rx="8" fill="#1a1a1a" stroke="#ff9f4d" stroke-width="1.5"/>
+    <text x="335" y="530" fill="#fff" font-size="11" text-anchor="middle" font-weight="bold">PC817</text>
+    <text x="335" y="546" fill="#aaa" font-size="9" text-anchor="middle">10k -&gt; 3V3</text>
+    <text x="335" y="558" fill="#aaa" font-size="9" text-anchor="middle">-&gt; GPIO26</text>
+    <path d="M 210 540 L 270 540" fill="none" stroke="#8fd3ff" stroke-width="2"/>
+    <path d="M 400 540 L 470 495" fill="none" stroke="#ff9f4d" stroke-width="2"/>
+
+    <!-- Ladung -->
+    <rect x="60" y="580" width="150" height="60" rx="8" fill="#242424" stroke="#8fd3ff" stroke-width="1.5"/>
+    <text x="135" y="603" fill="#fff" font-size="12" text-anchor="middle" font-weight="bold">Laadcontrole (D+)</text>
+    <text x="135" y="620" fill="#8fd3ff" font-size="10" text-anchor="middle">schakelt naar GND</text>
+    <rect x="270" y="580" width="130" height="60" rx="8" fill="#1a1a1a" stroke="#ff9f4d" stroke-width="1.5"/>
+    <text x="335" y="600" fill="#fff" font-size="11" text-anchor="middle" font-weight="bold">PC817</text>
+    <text x="335" y="616" fill="#aaa" font-size="9" text-anchor="middle">10k -&gt; 3V3</text>
+    <text x="335" y="628" fill="#aaa" font-size="9" text-anchor="middle">-&gt; GPIO27</text>
+    <path d="M 210 610 L 270 610" fill="none" stroke="#8fd3ff" stroke-width="2"/>
+    <path d="M 400 610 L 470 520" fill="none" stroke="#ff9f4d" stroke-width="2"/>
+
+    <!-- Fernlicht -->
+    <rect x="60" y="650" width="150" height="60" rx="8" fill="#242424" stroke="#8fd3ff" stroke-width="1.5"/>
+    <text x="135" y="673" fill="#fff" font-size="12" text-anchor="middle" font-weight="bold">Grootlichtschakelaar</text>
+    <text x="135" y="690" fill="#8fd3ff" font-size="10" text-anchor="middle">schakelt naar GND</text>
+    <rect x="270" y="650" width="130" height="60" rx="8" fill="#1a1a1a" stroke="#ff9f4d" stroke-width="1.5"/>
+    <text x="335" y="670" fill="#fff" font-size="11" text-anchor="middle" font-weight="bold">PC817</text>
+    <text x="335" y="686" fill="#aaa" font-size="9" text-anchor="middle">10k -&gt; 3V3</text>
+    <text x="335" y="698" fill="#aaa" font-size="9" text-anchor="middle">-&gt; GPIO33</text>
+    <path d="M 210 680 L 270 680" fill="none" stroke="#8fd3ff" stroke-width="2"/>
+    <path d="M 400 680 L 470 545" fill="none" stroke="#ff9f4d" stroke-width="2"/>
+
+    <text x="335" y="720" fill="#666" font-size="10" text-anchor="middle">elke PC817: LED-kant deelt geen massa met ESP32,</text>
+    <text x="335" y="733" fill="#666" font-size="10" text-anchor="middle">uitgangskant wel (isolatie zoals bij de tacho)</text>
+  </g>
+
+  <!-- ===== Power ===== -->
+  <rect x="900" y="440" width="220" height="90" rx="8" fill="#242424" stroke="#90ee90" stroke-width="1.5"/>
+  <text x="1010" y="472" fill="#fff" font-size="15" text-anchor="middle" font-weight="bold">Boordnet 12V</text>
+  <text x="1010" y="492" fill="#aaa" font-size="12" text-anchor="middle">via zekering</text>
+  <text x="1010" y="508" fill="#aaa" font-size="12" text-anchor="middle">(geschakeld met contact)</text>
+
+  <rect x="900" y="560" width="220" height="90" rx="8" fill="#242424" stroke="#90ee90" stroke-width="1.5"/>
+  <text x="1010" y="588" fill="#fff" font-size="13" text-anchor="middle" font-weight="bold">12V -&gt; 5V</text>
+  <text x="1010" y="606" fill="#fff" font-size="13" text-anchor="middle" font-weight="bold">buck-converter</text>
+  <text x="1010" y="626" fill="#aaa" font-size="11" text-anchor="middle">naar ESP32 5V/VIN</text>
+
+  <path d="M 1010 530 L 1010 560" fill="none" stroke="#90ee90" stroke-width="2"/>
+  <path d="M 900 605 L 730 440" fill="none" stroke="#90ee90" stroke-width="2"/>
+
+  <!-- GND common rail -->
+  <path d="M 730 405 L 850 405 L 850 730 L 150 730 L 150 640" fill="none" stroke="#ff8080" stroke-width="2" stroke-dasharray="6,4"/>
+  <path d="M 850 730 L 300 730 L 300 290" fill="none" stroke="#ff8080" stroke-width="2" stroke-dasharray="6,4"/>
+  <path d="M 850 730 L 375 730 L 375 170" fill="none" stroke="#ff8080" stroke-width="2" stroke-dasharray="6,4"/>
+  <path d="M 850 730 L 1090 730 L 1090 500" fill="none" stroke="#ff8080" stroke-width="2" stroke-dasharray="6,4"/>
+  <path d="M 850 730 L 1010 730 L 1010 650" fill="none" stroke="#ff8080" stroke-width="2" stroke-dasharray="6,4"/>
+  <text x="850" y="750" fill="#ff8080" font-size="12" text-anchor="middle">GND (gemeenschappelijke massa - stippellijn)</text>
+
+  <!-- Legend -->
+  <rect x="60" y="760" width="18" height="4" fill="#ffcc66"/>
+  <text x="86" y="766" fill="#ccc" font-size="12">analoog signaal (tank/temp)</text>
+
+  <rect x="330" y="760" width="18" height="4" fill="#8fd3ff"/>
+  <text x="356" y="766" fill="#ccc" font-size="12">schakelaar (vóór PC817)</text>
+
+  <rect x="580" y="760" width="18" height="4" fill="#90ee90"/>
+  <text x="606" y="766" fill="#ccc" font-size="12">voeding 5V/12V</text>
+
+  <rect x="800" y="760" width="18" height="4" fill="#ff8080"/>
+  <text x="826" y="766" fill="#ccc" font-size="12">massa (GND)</text>
+
+  <rect x="1000" y="760" width="18" height="4" fill="#ff9f4d"/>
+  <text x="1026" y="766" fill="#ccc" font-size="12">geïsoleerd signaal (PC817-uitgang)</text>
+</svg>
