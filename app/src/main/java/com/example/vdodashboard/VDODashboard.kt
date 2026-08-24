@@ -321,22 +321,71 @@ fun VdoCenterPanelGti(
         val h = size.height
         val unit = w // schaal-eenheid, panel is smal en hoog
 
-        drawRoundRect(color = Color(0xFF0C0C0C), topLeft = Offset(0f, 0f), size = Size(w, h), cornerRadius = CornerRadius(unit * 0.1f))
-        drawRoundRect(color = GtiRing.copy(alpha = 0.5f), topLeft = Offset(0f, 0f), size = Size(w, h), cornerRadius = CornerRadius(unit * 0.1f), style = Stroke(width = unit * 0.015f))
+        // Buitenste paneeloppervlak
+        drawRoundRect(color = Color(0xFF232323), topLeft = Offset(0f, 0f), size = Size(w, h), cornerRadius = CornerRadius(unit * 0.1f))
+        // Het middenstuk zelf ligt ~1,5mm dieper: donker vlak, iets naar binnen, geeft een verzonken rand
+        val inset = unit * 0.022f
+        drawRoundRect(color = Color(0xFF060606), topLeft = Offset(inset, inset), size = Size(w - inset * 2f, h - inset * 2f), cornerRadius = CornerRadius(unit * 0.085f))
+        // dun lichtrandje aan de onderkant van de verzonken rand (vangt licht, geeft dieptegevoel)
+        drawArc(
+            color = Color.White.copy(alpha = 0.10f),
+            startAngle = 20f, sweepAngle = 140f, useCenter = false,
+            topLeft = Offset(inset, inset), size = Size(w - inset * 2f, h - inset * 2f),
+            style = Stroke(width = unit * 0.006f)
+        )
 
-        // --- Temperatuurmeter (liggend), bovenin ---
+        // --- Temperatuurmeter, diagonale schaal (net als het origineel) ---
         val tempBoxTop = h * 0.03f
-        val tempBoxH = h * 0.13f
-        drawRoundRect(color = Color(0xFF141414), topLeft = Offset(w * 0.08f, tempBoxTop), size = Size(w * 0.84f, tempBoxH), cornerRadius = CornerRadius(unit * 0.06f))
+        val tempBoxH = h * 0.16f
+        val boxLeft = w * 0.10f
+        val boxW = w * 0.80f
+        drawRoundRect(color = Color(0xFF141414), topLeft = Offset(boxLeft, tempBoxTop), size = Size(boxW, tempBoxH), cornerRadius = CornerRadius(unit * 0.06f))
+
+        val scaleStart = Offset(boxLeft + boxW * 0.14f, tempBoxTop + tempBoxH * 0.82f)
+        val scaleEnd = Offset(boxLeft + boxW * 0.86f, tempBoxTop + tempBoxH * 0.30f)
+        drawLine(color = GtiWhite.copy(alpha = 0.35f), start = scaleStart, end = scaleEnd, strokeWidth = unit * 0.008f)
+
+        // Koud-symbool (parallellogram) bij het lage uiteinde
+        val coldC = Offset(scaleStart.x + boxW * 0.01f, tempBoxTop + tempBoxH * 0.28f)
+        val pw = unit * 0.075f; val ph = unit * 0.075f; val skew = unit * 0.03f
+        drawPath(
+            Path().apply {
+                moveTo(coldC.x - pw / 2f + skew, coldC.y - ph / 2f)
+                lineTo(coldC.x + pw / 2f + skew, coldC.y - ph / 2f)
+                lineTo(coldC.x + pw / 2f - skew, coldC.y + ph / 2f)
+                lineTo(coldC.x - pw / 2f - skew, coldC.y + ph / 2f)
+                close()
+            },
+            GtiWhite
+        )
+        // Heet-symbool (schuine streep) bij het hoge uiteinde
+        val hotC = Offset(scaleEnd.x - boxW * 0.01f, tempBoxTop + tempBoxH * 0.22f)
+        drawLine(color = GtiWhite, start = Offset(hotC.x - unit * 0.028f, hotC.y + unit * 0.045f), end = Offset(hotC.x + unit * 0.028f, hotC.y - unit * 0.045f), strokeWidth = unit * 0.016f, cap = StrokeCap.Round)
+
+        // Rood waarschuwingslampje, bol/glanzend
         val overheating = temperature > 110f
-        drawCircle(color = if (overheating) GtiRed else GtiRed.copy(alpha = 0.25f), radius = unit * 0.035f, center = Offset(w * 0.5f, tempBoxTop + tempBoxH * 0.32f))
-        val tScaleY = tempBoxTop + tempBoxH * 0.72f
-        drawLine(color = GtiWhite.copy(alpha = 0.4f), start = Offset(w * 0.18f, tScaleY), end = Offset(w * 0.82f, tScaleY), strokeWidth = unit * 0.01f)
+        val dotC = Offset(w * 0.5f, tempBoxTop + tempBoxH * 0.12f)
+        drawCircle(color = Color(0xFF1A1A1A), radius = unit * 0.042f, center = dotC)
+        drawCircle(color = if (overheating) GtiRed else GtiRed.copy(alpha = 0.30f), radius = unit * 0.033f, center = dotC)
+        drawCircle(color = Color.White.copy(alpha = if (overheating) 0.55f else 0.15f), radius = unit * 0.011f, center = Offset(dotC.x - unit * 0.012f, dotC.y - unit * 0.012f))
+
+        // Thermometer-in-water icoontje, met flankerende puntjes
+        val thermoC = Offset(w * 0.5f, tempBoxTop + tempBoxH * 0.60f)
+        drawRoundRect(color = GtiWhite, topLeft = Offset(thermoC.x - unit * 0.008f, thermoC.y - unit * 0.05f), size = Size(unit * 0.016f, unit * 0.06f), cornerRadius = CornerRadius(unit * 0.008f))
+        drawCircle(color = GtiWhite, radius = unit * 0.02f, center = Offset(thermoC.x, thermoC.y + unit * 0.02f))
+        drawLine(color = GtiWhite, start = Offset(thermoC.x - unit * 0.045f, thermoC.y + unit * 0.045f), end = Offset(thermoC.x + unit * 0.045f, thermoC.y + unit * 0.045f), strokeWidth = unit * 0.006f)
+        listOf(-0.12f, -0.08f, 0.08f, 0.12f).forEach { dx ->
+            drawCircle(color = GtiWhite.copy(alpha = 0.5f), radius = unit * 0.006f, center = Offset(w * 0.5f + dx * boxW, thermoC.y))
+        }
+
+        // Naald: vaste spil onderin de box, tip loopt over de diagonale schaal
         val tFrac = ((temperature - 40f) / 100f).coerceIn(0f, 1f)
-        val tNeedleX = w * 0.18f + tFrac * (w * 0.64f)
-        drawLine(color = GtiNeedle, start = Offset(w * 0.5f, tempBoxTop + tempBoxH * 1.15f), end = Offset(tNeedleX, tScaleY - unit * 0.05f), strokeWidth = unit * 0.018f, cap = StrokeCap.Round)
-        drawLabel("koud", w * 0.18f, tempBoxTop + tempBoxH + unit * 0.05f, unit * 0.055f, Color.Gray, bold = false)
-        drawLabel("heet", w * 0.82f, tempBoxTop + tempBoxH + unit * 0.05f, unit * 0.055f, Color.Gray, bold = false)
+        val needleTip = Offset(scaleStart.x + (scaleEnd.x - scaleStart.x) * tFrac, scaleStart.y + (scaleEnd.y - scaleStart.y) * tFrac)
+        val needleBase = Offset(w * 0.5f, tempBoxTop + tempBoxH * 1.15f)
+        drawLine(color = GtiNeedle, start = needleBase, end = needleTip, strokeWidth = unit * 0.02f, cap = StrokeCap.Round)
+
+        drawLabel("koud", scaleStart.x, tempBoxTop + tempBoxH + unit * 0.05f, unit * 0.055f, Color.Gray, bold = false)
+        drawLabel("heet", scaleEnd.x, tempBoxTop + tempBoxH + unit * 0.05f, unit * 0.055f, Color.Gray, bold = false)
 
         // --- Controlelampjes: 2 rijen van 5, in een vierkant, LED-uiterlijk ---
         val gridTop = h * 0.30f
@@ -360,6 +409,21 @@ fun VdoCenterPanelGti(
 
         fun drawLed(x: Float, y: Float, on: Boolean, color: Color) {
             val center = Offset(x, y)
+            // vierkante, verzonken socket rond het ledje
+            val socketSize = ledR * 2.7f
+            drawRoundRect(
+                color = Color(0xFF000000),
+                topLeft = Offset(x - socketSize / 2f, y - socketSize / 2f),
+                size = Size(socketSize, socketSize),
+                cornerRadius = CornerRadius(socketSize * 0.16f)
+            )
+            drawRoundRect(
+                color = Color(0xFF2E2E2E),
+                topLeft = Offset(x - socketSize / 2f, y - socketSize / 2f),
+                size = Size(socketSize, socketSize),
+                cornerRadius = CornerRadius(socketSize * 0.16f),
+                style = Stroke(width = socketSize * 0.05f)
+            )
             drawCircle(color = Color(0xFF050505), radius = ledR * 1.5f, center = center)
             drawCircle(color = Color(0xFF1A1A1A), radius = ledR * 1.25f, center = center)
             drawCircle(
@@ -381,11 +445,11 @@ fun VdoCenterPanelGti(
             drawLed(x, row2Y, false, Color(0xFF1A1A1A))
         }
 
-        // --- Digitale klok (LCD-stijl) onderin, tekst geschaald op paneelbreedte zodat hij past ---
+        // --- Digitale klok (LCD-stijl) onderin: rechthoekig (breder dan hoog), niet vierkant ---
         val lcdTop = h * 0.62f
-        val lcdH = h * 0.30f
+        val lcdH = w * 0.50f
         drawRoundRect(color = GtiLcdBg, topLeft = Offset(w * 0.12f, lcdTop), size = Size(w * 0.76f, lcdH), cornerRadius = CornerRadius(unit * 0.03f))
-        drawLabel("$hh:$mm", w * 0.5f, lcdTop + lcdH * 0.5f + unit * 0.05f, unit * 0.16f, GtiLcdFg, bold = true, mono = true)
+        drawLabel("$hh:$mm", w * 0.5f, lcdTop + lcdH * 0.5f + unit * 0.05f, unit * 0.15f, GtiLcdFg, bold = true, mono = true)
         drawLabel("km/h", w * 0.5f, lcdTop - unit * 0.03f, unit * 0.045f, Color.Gray, bold = false)
     }
 }
