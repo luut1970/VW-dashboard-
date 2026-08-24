@@ -338,30 +338,47 @@ fun VdoCenterPanelGti(
         drawLabel("koud", w * 0.18f, tempBoxTop + tempBoxH + unit * 0.05f, unit * 0.055f, Color.Gray, bold = false)
         drawLabel("heet", w * 0.82f, tempBoxTop + tempBoxH + unit * 0.05f, unit * 0.055f, Color.Gray, bold = false)
 
-        // --- Controlelampjes: 4 echte + 2 blinde (dummy) LED-plekken, symbolen i.p.v. tekst ---
-        val lampY = h * 0.40f
-        val lampR = unit * 0.062f
-        val slotXs = listOf(0.12f, 0.28f, 0.44f, 0.58f, 0.72f, 0.88f).map { it * w }
-        // volgorde: blind, blinker, oel, ladung, fernlicht, blind (net als op het origineel:
-        // niet elke fysieke LED-plek is op elk model aangesloten)
-        data class Slot(val on: Boolean, val color: Color, val icon: ((DrawScope, Offset, Float, Color) -> Unit)?)
-        val slots = listOf(
-            Slot(false, Color(0xFF1A1A1A), null),
-            Slot(blinkerOn, GtiGreen) { ds, c, s, col -> ds.iconBlinker(c, s, col) },
-            Slot(oelOn, GtiAmber) { ds, c, s, col -> ds.iconOil(c, s, col) },
-            Slot(ladungOn, GtiRed) { ds, c, s, col -> ds.iconBattery(c, s, col) },
-            Slot(fernlichtOn, GtiBlue) { ds, c, s, col -> ds.iconHeadlight(c, s, col) },
-            Slot(false, Color(0xFF1A1A1A), null)
+        // --- Controlelampjes: 2 rijen van 5, in een vierkant, LED-uiterlijk ---
+        val gridTop = h * 0.30f
+        val gridSize = w * 0.86f // vierkant blok
+        val colGap = gridSize / 5f
+        val rowGap = gridSize / 5f // zelfde afstand als tussen kolommen -> vierkante opzet
+        val gridLeft = (w - gridSize) / 2f
+        val colXs = (0 until 5).map { gridLeft + colGap * it + colGap / 2f }
+        val row1Y = gridTop + rowGap * 0.5f
+        val row2Y = gridTop + rowGap * 1.5f
+
+        data class Lamp(val on: Boolean, val color: Color, val icon: (DrawScope.(Offset, Float, Color) -> Unit)?)
+        val topRow = listOf(
+            Lamp(blinkerOn, GtiGreen) { c, s, col -> iconArrowsBoth(c, s, col) },
+            Lamp(ladungOn, GtiRed) { c, s, col -> iconBattery(c, s, col) },
+            Lamp(false, Color(0xFF1A1A1A), null),
+            Lamp(oelOn, GtiRed) { c, s, col -> iconOil(c, s, col) },
+            Lamp(fernlichtOn, GtiBlue) { c, s, col -> iconHeadlight(c, s, col) }
         )
-        slotXs.forEachIndexed { i, x ->
-            val slot = slots[i]
-            val lampCenter = Offset(x, lampY)
-            drawCircle(color = Color(0xFF1A1A1A), radius = lampR * 1.3f, center = lampCenter)
-            drawCircle(color = if (slot.on) slot.color else slot.color.copy(alpha = if (slot.icon == null) 1f else 0.28f), radius = lampR, center = lampCenter)
-            if (slot.icon != null) {
-                val iconY = lampY - lampR * 2.3f
-                slot.icon.invoke(this, Offset(x, iconY), unit * 0.075f, Color.LightGray)
+        val ledR = unit * 0.048f
+
+        fun drawLed(x: Float, y: Float, on: Boolean, color: Color) {
+            val center = Offset(x, y)
+            drawCircle(color = Color(0xFF050505), radius = ledR * 1.5f, center = center)
+            drawCircle(color = Color(0xFF1A1A1A), radius = ledR * 1.25f, center = center)
+            drawCircle(
+                color = if (on) color else color.copy(alpha = 0.22f),
+                radius = ledR,
+                center = center
+            )
+            // glanzende hoogtelichtje, typisch voor een LED-bolletje
+            drawCircle(color = Color.White.copy(alpha = if (on) 0.55f else 0.12f), radius = ledR * 0.35f, center = Offset(x - ledR * 0.32f, y - ledR * 0.32f))
+        }
+
+        colXs.forEachIndexed { i, x ->
+            val lamp = topRow[i]
+            drawLed(x, row1Y, lamp.on, lamp.color)
+            lamp.icon?.let { drawFn ->
+                drawFn(this, Offset(x, row1Y - ledR * 2.4f), unit * 0.06f, Color.LightGray)
             }
+            // Onderste rij: altijd zwart/onbenut
+            drawLed(x, row2Y, false, Color(0xFF1A1A1A))
         }
 
         // --- Digitale klok (LCD-stijl) onderin, tekst geschaald op paneelbreedte zodat hij past ---
@@ -375,18 +392,31 @@ fun VdoCenterPanelGti(
 
 // ---------- Kleine symboolpictogrammen voor de lampjes ----------
 
-private fun DrawScope.iconBlinker(c: Offset, s: Float, color: Color) {
-    val path = Path().apply {
-        moveTo(c.x - s * 0.5f, c.y - s * 0.22f)
-        lineTo(c.x + s * 0.05f, c.y - s * 0.22f)
-        lineTo(c.x + s * 0.05f, c.y - s * 0.42f)
-        lineTo(c.x + s * 0.55f, c.y)
-        lineTo(c.x + s * 0.05f, c.y + s * 0.42f)
-        lineTo(c.x + s * 0.05f, c.y + s * 0.22f)
+private fun DrawScope.iconArrowsBoth(c: Offset, s: Float, color: Color) {
+    // Pijl naar links
+    val left = Path().apply {
+        moveTo(c.x - s * 0.05f, c.y - s * 0.22f)
+        lineTo(c.x - s * 0.5f, c.y - s * 0.22f)
+        lineTo(c.x - s * 0.5f, c.y - s * 0.4f)
+        lineTo(c.x - s * 0.85f, c.y)
+        lineTo(c.x - s * 0.5f, c.y + s * 0.4f)
         lineTo(c.x - s * 0.5f, c.y + s * 0.22f)
+        lineTo(c.x - s * 0.05f, c.y + s * 0.22f)
         close()
     }
-    drawPath(path, color)
+    // Pijl naar rechts
+    val right = Path().apply {
+        moveTo(c.x + s * 0.05f, c.y - s * 0.22f)
+        lineTo(c.x + s * 0.5f, c.y - s * 0.22f)
+        lineTo(c.x + s * 0.5f, c.y - s * 0.4f)
+        lineTo(c.x + s * 0.85f, c.y)
+        lineTo(c.x + s * 0.5f, c.y + s * 0.4f)
+        lineTo(c.x + s * 0.5f, c.y + s * 0.22f)
+        lineTo(c.x + s * 0.05f, c.y + s * 0.22f)
+        close()
+    }
+    drawPath(left, color)
+    drawPath(right, color)
 }
 
 private fun DrawScope.iconBattery(c: Offset, s: Float, color: Color) {
