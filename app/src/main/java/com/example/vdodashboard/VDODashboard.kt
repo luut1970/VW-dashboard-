@@ -30,7 +30,9 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 // ---------- Kleuren (VW Golf Mk2 GTI / VDO-stijl: vlak, geen chrome) ----------
-val GtiFace = Color(0xFF050505)
+val GtiFace = Color(0xFF232326)
+val GtiAnthraciteDark = Color(0xFF17171A)
+val GtiAnthraciteMid = Color(0xFF2A2A2D)
 val GtiRing = Color(0xFFB0B0B0)
 val GtiNeedle = Color(0xFFE7C79A)
 val GtiAmber = Color(0xFFFF9F1C)
@@ -186,14 +188,14 @@ fun VdoSpeedometerGti(currentKph: Float, totalKm: Float = 0f) {
         val boxTop = boxCenterY - cellH / 2f
         var cellX = center.x - totalW / 2f
         drawRoundRect(
-            color = Color(0xFF0D0D0D),
+            color = GtiAnthraciteDark,
             topLeft = Offset(cellX - radius * 0.015f, boxTop - radius * 0.015f),
             size = Size(totalW + radius * 0.03f, cellH + radius * 0.03f),
             cornerRadius = CornerRadius(radius * 0.01f),
             style = Stroke(width = radius * 0.005f)
         )
         digits.forEach { digit ->
-            drawRoundRect(color = Color(0xFF1A1A1A), topLeft = Offset(cellX, boxTop), size = Size(cellW, cellH), cornerRadius = CornerRadius(radius * 0.008f))
+            drawRoundRect(color = GtiAnthraciteMid, topLeft = Offset(cellX, boxTop), size = Size(cellW, cellH), cornerRadius = CornerRadius(radius * 0.008f))
             drawLabel(digit.toString(), cellX + cellW / 2f, boxCenterY + cellH * 0.28f, cellH * 0.6f, Color.White)
             cellX += cellW + gap
         }
@@ -201,7 +203,7 @@ fun VdoSpeedometerGti(currentKph: Float, totalKm: Float = 0f) {
         // Decoratief tripteller-vakje onder de naaldas
         val tripY = center.y + radius * 0.28f
         drawRoundRect(
-            color = Color(0xFF0D0D0D),
+            color = GtiAnthraciteDark,
             topLeft = Offset(center.x - radius * 0.18f, tripY - radius * 0.09f),
             size = Size(radius * 0.36f, radius * 0.18f),
             cornerRadius = CornerRadius(radius * 0.01f),
@@ -211,7 +213,7 @@ fun VdoSpeedometerGti(currentKph: Float, totalKm: Float = 0f) {
 
         val targetAngle = angleForKph(animatedKph.coerceIn(0f, maxKph))
         taperedNeedle(center, targetAngle, radius * 0.82f, radius * 0.026f, GtiNeedle)
-        drawCircle(color = Color(0xFF1C1C1C), radius = radius * 0.09f, center = center)
+        drawCircle(color = GtiAnthraciteDark, radius = radius * 0.09f, center = center)
         drawCircle(color = Color(0xFF3A3A3A), radius = radius * 0.02f, center = Offset(center.x - radius * 0.05f, center.y - radius * 0.09f))
         drawCircle(color = Color(0xFF3A3A3A), radius = radius * 0.02f, center = Offset(center.x + radius * 0.05f, center.y - radius * 0.09f))
     }
@@ -268,7 +270,7 @@ fun VdoTachometerGti(currentRpm: Float, fuelLevel: Float) {
 
         val targetAngle = startAngle + (animatedRpm.coerceIn(0f, maxRpm) / maxRpm) * sweepAngle
         taperedNeedle(center, targetAngle, radius * 0.72f, radius * 0.026f, GtiNeedle)
-        drawCircle(color = Color(0xFF1C1C1C), radius = radius * 0.09f, center = center)
+        drawCircle(color = GtiAnthraciteDark, radius = radius * 0.09f, center = center)
         drawCircle(color = Color(0xFF3A3A3A), radius = radius * 0.02f, center = Offset(center.x - radius * 0.05f, center.y - radius * 0.09f))
         drawCircle(color = Color(0xFF3A3A3A), radius = radius * 0.02f, center = Offset(center.x + radius * 0.05f, center.y - radius * 0.09f))
 
@@ -277,7 +279,7 @@ fun VdoTachometerGti(currentRpm: Float, fuelLevel: Float) {
         val fuelBoxH = radius * 0.22f
         val fuelBoxTop = center.y + radius * 0.44f
         val fuelBoxLeft = center.x - fuelBoxW / 2f
-        drawRoundRect(color = Color(0xFF141414), topLeft = Offset(fuelBoxLeft, fuelBoxTop), size = Size(fuelBoxW, fuelBoxH), cornerRadius = CornerRadius(radius * 0.05f))
+        drawRoundRect(color = GtiAnthraciteMid, topLeft = Offset(fuelBoxLeft, fuelBoxTop), size = Size(fuelBoxW, fuelBoxH), cornerRadius = CornerRadius(radius * 0.05f))
         val lowFuel = fuelLevel < 0.1f
         drawCircle(color = if (lowFuel) GtiAmber else GtiAmber.copy(alpha = 0.25f), radius = radius * 0.028f, center = Offset(center.x, fuelBoxTop + fuelBoxH * 0.28f))
         val fScaleY = fuelBoxTop + fuelBoxH * 0.68f
@@ -325,7 +327,7 @@ fun VdoCenterPanelGti(
         drawRoundRect(color = Color(0xFF232323), topLeft = Offset(0f, 0f), size = Size(w, h), cornerRadius = CornerRadius(unit * 0.1f))
         // Het middenstuk zelf ligt ~1,5mm dieper: donker vlak, iets naar binnen, geeft een verzonken rand
         val inset = unit * 0.022f
-        drawRoundRect(color = Color(0xFF060606), topLeft = Offset(inset, inset), size = Size(w - inset * 2f, h - inset * 2f), cornerRadius = CornerRadius(unit * 0.085f))
+        drawRoundRect(color = GtiAnthraciteDark, topLeft = Offset(inset, inset), size = Size(w - inset * 2f, h - inset * 2f), cornerRadius = CornerRadius(unit * 0.085f))
         // dun lichtrandje aan de onderkant van de verzonken rand (vangt licht, geeft dieptegevoel)
         drawArc(
             color = Color.White.copy(alpha = 0.10f),
@@ -334,20 +336,35 @@ fun VdoCenterPanelGti(
             style = Stroke(width = unit * 0.006f)
         )
 
-        // --- Temperatuurmeter, diagonale schaal (net als het origineel) ---
+        // --- Temperatuurmeter (net als het origineel: geen aparte schaallijn, geen tekst) ---
         val tempBoxTop = h * 0.03f
-        val tempBoxH = h * 0.16f
+        val tempBoxH = h * 0.13f
         val boxLeft = w * 0.10f
         val boxW = w * 0.80f
-        drawRoundRect(color = Color(0xFF141414), topLeft = Offset(boxLeft, tempBoxTop), size = Size(boxW, tempBoxH), cornerRadius = CornerRadius(unit * 0.06f))
+        drawRoundRect(color = GtiAnthraciteMid, topLeft = Offset(boxLeft, tempBoxTop), size = Size(boxW, tempBoxH), cornerRadius = CornerRadius(unit * 0.06f))
 
-        val scaleStart = Offset(boxLeft + boxW * 0.14f, tempBoxTop + tempBoxH * 0.82f)
-        val scaleEnd = Offset(boxLeft + boxW * 0.86f, tempBoxTop + tempBoxH * 0.30f)
-        drawLine(color = GtiWhite.copy(alpha = 0.35f), start = scaleStart, end = scaleEnd, strokeWidth = unit * 0.008f)
+        // Rood waarschuwingslampje, bol/glanzend - bovenin het midden
+        val overheating = temperature > 110f
+        val dotC = Offset(w * 0.5f, tempBoxTop + tempBoxH * 0.18f)
+        drawCircle(color = GtiAnthraciteDark, radius = unit * 0.042f, center = dotC)
+        drawCircle(color = if (overheating) GtiRed else GtiRed.copy(alpha = 0.30f), radius = unit * 0.033f, center = dotC)
+        drawCircle(color = Color.White.copy(alpha = if (overheating) 0.55f else 0.15f), radius = unit * 0.011f, center = Offset(dotC.x - unit * 0.012f, dotC.y - unit * 0.012f))
 
-        // Koud-symbool (parallellogram) bij het lage uiteinde
-        val coldC = Offset(scaleStart.x + boxW * 0.01f, tempBoxTop + tempBoxH * 0.28f)
-        val pw = unit * 0.075f; val ph = unit * 0.075f; val skew = unit * 0.03f
+        // Naald: spil zit een laag naar achteren/onder, waaiert van links(koud) via boven(midden,
+        // net onder het lampje) naar rechts(heet)
+        val needleBase = Offset(w * 0.5f, tempBoxTop + tempBoxH * 1.55f)
+        val needleLen = needleBase.y - dotC.y - unit * 0.05f
+        val angleCold = 200f
+        val angleHot = 340f
+        val tFrac = ((temperature - 40f) / 100f).coerceIn(0f, 1f)
+        val needleAngle = angleCold + tFrac * (angleHot - angleCold)
+        val nRad = Math.toRadians(needleAngle.toDouble())
+        val needleTip = Offset(needleBase.x + needleLen * cos(nRad).toFloat(), needleBase.y + needleLen * sin(nRad).toFloat())
+
+        // Koud-symbool (parallellogram) bij het lage uiteinde van de naaldzwaai
+        val coldDir = Math.toRadians(angleCold.toDouble())
+        val coldC = Offset(needleBase.x + (needleLen * 0.78f) * cos(coldDir).toFloat(), needleBase.y + (needleLen * 0.78f) * sin(coldDir).toFloat())
+        val pw = unit * 0.07f; val ph = unit * 0.07f; val skew = unit * 0.028f
         drawPath(
             Path().apply {
                 moveTo(coldC.x - pw / 2f + skew, coldC.y - ph / 2f)
@@ -358,34 +375,21 @@ fun VdoCenterPanelGti(
             },
             GtiWhite
         )
-        // Heet-symbool (schuine streep) bij het hoge uiteinde
-        val hotC = Offset(scaleEnd.x - boxW * 0.01f, tempBoxTop + tempBoxH * 0.22f)
-        drawLine(color = GtiWhite, start = Offset(hotC.x - unit * 0.028f, hotC.y + unit * 0.045f), end = Offset(hotC.x + unit * 0.028f, hotC.y - unit * 0.045f), strokeWidth = unit * 0.016f, cap = StrokeCap.Round)
-
-        // Rood waarschuwingslampje, bol/glanzend
-        val overheating = temperature > 110f
-        val dotC = Offset(w * 0.5f, tempBoxTop + tempBoxH * 0.12f)
-        drawCircle(color = Color(0xFF1A1A1A), radius = unit * 0.042f, center = dotC)
-        drawCircle(color = if (overheating) GtiRed else GtiRed.copy(alpha = 0.30f), radius = unit * 0.033f, center = dotC)
-        drawCircle(color = Color.White.copy(alpha = if (overheating) 0.55f else 0.15f), radius = unit * 0.011f, center = Offset(dotC.x - unit * 0.012f, dotC.y - unit * 0.012f))
+        // Heet-symbool (schuine streep) bij het hoge uiteinde van de naaldzwaai
+        val hotDir = Math.toRadians(angleHot.toDouble())
+        val hotC = Offset(needleBase.x + (needleLen * 0.78f) * cos(hotDir).toFloat(), needleBase.y + (needleLen * 0.78f) * sin(hotDir).toFloat())
+        drawLine(color = GtiWhite, start = Offset(hotC.x - unit * 0.026f, hotC.y + unit * 0.042f), end = Offset(hotC.x + unit * 0.026f, hotC.y - unit * 0.042f), strokeWidth = unit * 0.015f, cap = StrokeCap.Round)
 
         // Thermometer-in-water icoontje, met flankerende puntjes
-        val thermoC = Offset(w * 0.5f, tempBoxTop + tempBoxH * 0.60f)
-        drawRoundRect(color = GtiWhite, topLeft = Offset(thermoC.x - unit * 0.008f, thermoC.y - unit * 0.05f), size = Size(unit * 0.016f, unit * 0.06f), cornerRadius = CornerRadius(unit * 0.008f))
-        drawCircle(color = GtiWhite, radius = unit * 0.02f, center = Offset(thermoC.x, thermoC.y + unit * 0.02f))
-        drawLine(color = GtiWhite, start = Offset(thermoC.x - unit * 0.045f, thermoC.y + unit * 0.045f), end = Offset(thermoC.x + unit * 0.045f, thermoC.y + unit * 0.045f), strokeWidth = unit * 0.006f)
-        listOf(-0.12f, -0.08f, 0.08f, 0.12f).forEach { dx ->
+        val thermoC = Offset(w * 0.5f, tempBoxTop + tempBoxH * 0.62f)
+        drawRoundRect(color = GtiWhite, topLeft = Offset(thermoC.x - unit * 0.008f, thermoC.y - unit * 0.045f), size = Size(unit * 0.016f, unit * 0.054f), cornerRadius = CornerRadius(unit * 0.008f))
+        drawCircle(color = GtiWhite, radius = unit * 0.018f, center = Offset(thermoC.x, thermoC.y + unit * 0.02f))
+        drawLine(color = GtiWhite, start = Offset(thermoC.x - unit * 0.04f, thermoC.y + unit * 0.042f), end = Offset(thermoC.x + unit * 0.04f, thermoC.y + unit * 0.042f), strokeWidth = unit * 0.006f)
+        listOf(-0.11f, -0.075f, 0.075f, 0.11f).forEach { dx ->
             drawCircle(color = GtiWhite.copy(alpha = 0.5f), radius = unit * 0.006f, center = Offset(w * 0.5f + dx * boxW, thermoC.y))
         }
 
-        // Naald: vaste spil onderin de box, tip loopt over de diagonale schaal
-        val tFrac = ((temperature - 40f) / 100f).coerceIn(0f, 1f)
-        val needleTip = Offset(scaleStart.x + (scaleEnd.x - scaleStart.x) * tFrac, scaleStart.y + (scaleEnd.y - scaleStart.y) * tFrac)
-        val needleBase = Offset(w * 0.5f, tempBoxTop + tempBoxH * 1.15f)
         drawLine(color = GtiNeedle, start = needleBase, end = needleTip, strokeWidth = unit * 0.02f, cap = StrokeCap.Round)
-
-        drawLabel("koud", scaleStart.x, tempBoxTop + tempBoxH + unit * 0.05f, unit * 0.055f, Color.Gray, bold = false)
-        drawLabel("heet", scaleEnd.x, tempBoxTop + tempBoxH + unit * 0.05f, unit * 0.055f, Color.Gray, bold = false)
 
         // --- Controlelampjes: 2 rijen van 5, in een vierkant, LED-uiterlijk ---
         val gridTop = h * 0.30f
@@ -412,19 +416,19 @@ fun VdoCenterPanelGti(
             // vierkante, verzonken socket rond het ledje
             val socketSize = ledR * 2.7f
             drawRoundRect(
-                color = Color(0xFF000000),
+                color = GtiAnthraciteDark,
                 topLeft = Offset(x - socketSize / 2f, y - socketSize / 2f),
                 size = Size(socketSize, socketSize),
                 cornerRadius = CornerRadius(socketSize * 0.16f)
             )
             drawRoundRect(
-                color = Color(0xFF2E2E2E),
+                color = GtiAnthraciteMid,
                 topLeft = Offset(x - socketSize / 2f, y - socketSize / 2f),
                 size = Size(socketSize, socketSize),
                 cornerRadius = CornerRadius(socketSize * 0.16f),
                 style = Stroke(width = socketSize * 0.05f)
             )
-            drawCircle(color = Color(0xFF050505), radius = ledR * 1.5f, center = center)
+            drawCircle(color = GtiAnthraciteDark, radius = ledR * 1.5f, center = center)
             drawCircle(color = Color(0xFF1A1A1A), radius = ledR * 1.25f, center = center)
             drawCircle(
                 color = if (on) color else color.copy(alpha = 0.22f),
@@ -439,10 +443,18 @@ fun VdoCenterPanelGti(
             val lamp = topRow[i]
             drawLed(x, row1Y, lamp.on, lamp.color)
             lamp.icon?.let { drawFn ->
-                drawFn(this, Offset(x, row1Y - ledR * 2.4f), unit * 0.06f, Color.LightGray)
+                val iconCenter = Offset(x, row1Y - ledR * 2.4f)
+                val insetSize = unit * 0.17f
+                drawRoundRect(
+                    color = GtiAnthraciteDark,
+                    topLeft = Offset(iconCenter.x - insetSize / 2f, iconCenter.y - insetSize / 2f),
+                    size = Size(insetSize, insetSize),
+                    cornerRadius = CornerRadius(insetSize * 0.2f)
+                )
+                drawFn(this, iconCenter, unit * 0.06f, Color.LightGray)
             }
             // Onderste rij: altijd zwart/onbenut
-            drawLed(x, row2Y, false, Color(0xFF1A1A1A))
+            drawLed(x, row2Y, false, GtiAnthraciteDark)
         }
 
         // --- Digitale klok (LCD-stijl) onderin: rechthoekig (breder dan hoog), niet vierkant ---
