@@ -165,8 +165,8 @@ fun VdoSpeedometerGti(currentKph: Float, totalKm: Float = 0f) {
         val redEndRad = Math.toRadians(angleForKph(40f).toDouble())
         drawArc(
             color = GtiRed,
-            startAngle = angleForKph(20f),
-            sweepAngle = (angleForKph(40f) - angleForKph(20f)),
+            startAngle = angleForKph(55f),
+            sweepAngle = (angleForKph(65f) - angleForKph(55f)),
             useCenter = false,
             topLeft = Offset(center.x - radius * 0.90f, center.y - radius * 0.90f),
             size = Size(radius * 1.80f, radius * 1.80f),
@@ -176,6 +176,7 @@ fun VdoSpeedometerGti(currentKph: Float, totalKm: Float = 0f) {
         drawLabel("VDO", center.x, center.y - radius * 0.38f, radius * 0.07f, Color.LightGray, bold = false)
         drawLabel("km", center.x, center.y - radius * 0.28f, radius * 0.065f, Color.LightGray, bold = false)
         drawLabel("km/h", center.x, center.y + radius * 0.62f, radius * 0.11f, GtiWhite)
+        drawLabel("950", center.x, center.y + radius * 0.72f, radius * 0.055f, Color.Gray, bold = false)
 
         // Mechanische kilometerteller boven de naaldas, plus decoratief trip-vakje eronder
         val totalTenths = (totalKm * 10f).toLong().coerceIn(0L, 999999L)
@@ -200,16 +201,27 @@ fun VdoSpeedometerGti(currentKph: Float, totalKm: Float = 0f) {
             cellX += cellW + gap
         }
 
-        // Decoratief tripteller-vakje onder de naaldas
-        val tripY = center.y + radius * 0.28f
-        drawRoundRect(
-            color = GtiAnthraciteDark,
-            topLeft = Offset(center.x - radius * 0.18f, tripY - radius * 0.09f),
-            size = Size(radius * 0.36f, radius * 0.18f),
-            cornerRadius = CornerRadius(radius * 0.01f),
-            style = Stroke(width = radius * 0.005f)
-        )
-        drawLabel("0.0", center.x, tripY + radius * 0.03f, radius * 0.10f, GtiAmber)
+        // Tweede (decoratief) tripteller-vakje onder de naaldas, zoals op het origineel
+        val tripDigits = "L059"
+        val tripCellW = radius * 0.075f
+        val tripCellH = radius * 0.12f
+        val tripGap = radius * 0.005f
+        val tripTotalW = tripDigits.length * tripCellW + (tripDigits.length - 1) * tripGap
+        var tripX = center.x - tripTotalW / 2f
+        val tripBoxCenterY = center.y + radius * 0.28f
+        val tripBoxTop = tripBoxCenterY - tripCellH / 2f
+        tripDigits.forEachIndexed { i, ch ->
+            val isLast = i == tripDigits.lastIndex
+            drawRoundRect(
+                color = GtiAnthraciteDark,
+                topLeft = Offset(tripX, tripBoxTop),
+                size = Size(tripCellW, tripCellH),
+                cornerRadius = CornerRadius(radius * 0.008f),
+                style = Stroke(width = radius * 0.004f)
+            )
+            drawLabel(ch.toString(), tripX + tripCellW / 2f, tripBoxCenterY + tripCellH * 0.28f, tripCellH * 0.6f, if (isLast) GtiAmber else GtiWhite)
+            tripX += tripCellW + tripGap
+        }
 
         val targetAngle = angleForKph(animatedKph.coerceIn(0f, maxKph))
         taperedNeedle(center, targetAngle, radius * 0.82f, radius * 0.026f, GtiNeedle)
@@ -457,12 +469,44 @@ fun VdoCenterPanelGti(
             drawLed(x, row2Y, false, GtiAnthraciteDark)
         }
 
-        // --- Digitale klok (LCD-stijl) onderin: rechthoekig (breder dan hoog), niet vierkant ---
+        // --- Leeg trimstrookje, zoals op het origineel (geen functie) ---
+        val blankTop = h * 0.50f
+        val blankH = h * 0.055f
+        drawRoundRect(color = GtiAnthraciteDark, topLeft = Offset(w * 0.10f, blankTop), size = Size(w * 0.80f, blankH), cornerRadius = CornerRadius(unit * 0.03f))
+
+        // --- Icoontjes boven de LCD: klokje, "km", "km/h" ---
         val lcdTop = h * 0.62f
         val lcdH = w * 0.50f
+        val iconRowY = lcdTop - unit * 0.06f
+        // klein klokje
+        val clockC = Offset(w * 0.20f, iconRowY)
+        drawCircle(color = Color.Gray, radius = unit * 0.028f, center = clockC, style = Stroke(width = unit * 0.006f))
+        drawLine(color = Color.Gray, start = clockC, end = Offset(clockC.x, clockC.y - unit * 0.016f), strokeWidth = unit * 0.005f)
+        drawLine(color = Color.Gray, start = clockC, end = Offset(clockC.x + unit * 0.012f, clockC.y), strokeWidth = unit * 0.005f)
+        drawLabel("km", w * 0.5f, iconRowY + unit * 0.02f, unit * 0.045f, Color.Gray, bold = false)
+        drawLabel("km/h", w * 0.80f, iconRowY + unit * 0.02f, unit * 0.045f, Color.Gray, bold = false)
+
         drawRoundRect(color = GtiLcdBg, topLeft = Offset(w * 0.12f, lcdTop), size = Size(w * 0.76f, lcdH), cornerRadius = CornerRadius(unit * 0.03f))
         drawLabel("$hh:$mm", w * 0.5f, lcdTop + lcdH * 0.5f + unit * 0.05f, unit * 0.15f, GtiLcdFg, bold = true, mono = true)
-        drawLabel("km/h", w * 0.5f, lcdTop - unit * 0.03f, unit * 0.045f, Color.Gray, bold = false)
+
+        // --- Icoontjes onder de LCD: l/100km, olie+°C, zon+°C ---
+        val bottomRowY = lcdTop + lcdH + unit * 0.06f
+        drawLabel("l/100km", w * 0.22f, bottomRowY + unit * 0.015f, unit * 0.04f, Color.Gray, bold = false)
+        iconOil(Offset(w * 0.52f, bottomRowY), unit * 0.035f, Color.Gray)
+        drawLabel("°C", w * 0.58f, bottomRowY + unit * 0.015f, unit * 0.04f, Color.Gray, bold = false)
+        // simpel zonnetje
+        val sunC = Offset(w * 0.78f, bottomRowY)
+        drawCircle(color = Color.Gray, radius = unit * 0.018f, center = sunC)
+        for (a in 0 until 8) {
+            val rad = Math.toRadians((a * 45).toDouble())
+            drawLine(
+                color = Color.Gray,
+                start = Offset((sunC.x + unit * 0.022f * cos(rad)).toFloat(), (sunC.y + unit * 0.022f * sin(rad)).toFloat()),
+                end = Offset((sunC.x + unit * 0.032f * cos(rad)).toFloat(), (sunC.y + unit * 0.032f * sin(rad)).toFloat()),
+                strokeWidth = unit * 0.004f
+            )
+        }
+        drawLabel("°C", w * 0.88f, bottomRowY + unit * 0.015f, unit * 0.04f, Color.Gray, bold = false)
     }
 }
 
