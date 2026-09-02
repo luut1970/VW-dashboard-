@@ -163,8 +163,8 @@ fun VdoSpeedometerGti(currentKph: Float, totalKm: Float = 0f) {
         // Rode zone net na 60 km/h
         drawArc(
             color = GtiRed,
-            startAngle = angleForKph(55f),
-            sweepAngle = (angleForKph(65f) - angleForKph(55f)),
+            startAngle = angleForKph(45f),
+            sweepAngle = (angleForKph(55f) - angleForKph(45f)),
             useCenter = false,
             topLeft = Offset(center.x - radius * 0.90f, center.y - radius * 0.90f),
             size = Size(radius * 1.80f, radius * 1.80f),
@@ -200,7 +200,7 @@ fun VdoSpeedometerGti(currentKph: Float, totalKm: Float = 0f) {
         }
 
         // Decoratief tripteller-vakje onder de naaldas, zoals op het origineel
-        val tripDigits = "L059"
+        val tripDigits = "1059"
         val tripCellW = radius * 0.075f
         val tripCellH = radius * 0.12f
         val tripGap = radius * 0.005f
@@ -300,11 +300,11 @@ fun VdoTachometerGti(currentRpm: Float, fuelLevel: Float) {
             color = GtiNeedle,
             start = Offset(center.x, fuelBoxTop + fuelBoxH * 1.05f),
             end = Offset(fNeedleX, fScaleY - radius * 0.035f),
-            strokeWidth = radius * 0.015f,
+            strokeWidth = radius * 0.15f,
             cap = StrokeCap.Round
         )
-        drawLabel("leeg", fuelBoxLeft + fuelBoxW * 0.15f, fuelBoxTop + fuelBoxH + radius * 0.045f, radius * 0.045f, Color.Gray, bold = false)
-        drawLabel("vol", fuelBoxLeft + fuelBoxW * 0.85f, fuelBoxTop + fuelBoxH + radius * 0.045f, radius * 0.045f, Color.Gray, bold = false)
+        drawLabel("", fuelBoxLeft + fuelBoxW * 0.15f, fuelBoxTop + fuelBoxH + radius * 0.045f, radius * 0.045f, Color.Gray, bold = false)
+        drawLabel("", fuelBoxLeft + fuelBoxW * 0.85f, fuelBoxTop + fuelBoxH + radius * 0.045f, radius * 0.045f, Color.Gray, bold = false)
     }
 }
 
